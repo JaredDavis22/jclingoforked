@@ -78,6 +78,7 @@ public class ApplicationTest implements Application {
         String program = "1 {a; b; c(1/0)}.";
         Path tmpFile = Files.createTempFile(null, null);
         Files.write(tmpFile, program.getBytes(StandardCharsets.UTF_8));
+        System.out.println("tmpFile = " + tmpFile.toAbsolutePath().toString());
         int ret = this.run(tmpFile.toAbsolutePath().toString(), "--outf=3", "0", "--test=x", "--flag");
 
         Assert.assertEquals(30, ret);
