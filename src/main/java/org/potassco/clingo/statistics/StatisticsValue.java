@@ -64,6 +64,12 @@ public class StatisticsValue extends Statistics {
     }
 
     @Override
+    public void copyFrom(Statistics source) {
+        super.copyFrom(source);
+        set(source.get());
+    }
+
+    @Override
     public String toString() {
         return String.valueOf(get());
     }

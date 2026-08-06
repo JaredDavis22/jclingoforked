@@ -143,9 +143,9 @@ public class StatisticsMap extends Statistics {
      * @return the newly created entry
      */
     public Statistics set(String name, Statistics entry) {
-        LongByReference longByReference = new LongByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_statistics_map_add_subkey(statistics, key, name, entry.getType().getValue(), longByReference));
-        return Statistics.fromKey(statistics, longByReference.getValue());
+        Statistics subKey = addKey(name, entry.getType());
+        subKey.copyFrom(entry);
+        return subKey;
     }
 
     /**
@@ -168,6 +168,17 @@ public class StatisticsMap extends Statistics {
     @Override
     public StatisticsType getType() {
         return StatisticsType.MAP;
+    }
+
+    @Override
+    public void copyFrom(Statistics source) {
+        super.copyFrom(source);
+        int size = source.size();
+        for (int i = 0; i < size; i++) {
+            String name = ((StatisticsMap) source).getKey(i);
+            Statistics element = source.get(name);
+            addKey(name, element.getType()).copyFrom(element);
+        }
     }
 
     @Override

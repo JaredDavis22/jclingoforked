@@ -96,6 +96,16 @@ public class StatisticsArray extends Statistics {
     }
 
     @Override
+    public void copyFrom(Statistics source) {
+        super.copyFrom(source);
+        int size = source.size();
+        for (int i = 0; i < size; i++) {
+            Statistics element = source.get(i);
+            add(element.getType()).copyFrom(element);
+        }
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("[");

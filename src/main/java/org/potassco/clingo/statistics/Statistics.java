@@ -133,4 +133,15 @@ public abstract class Statistics {
      */
     public abstract StatisticsType getType();
 
+    /**
+     * Recursively copies the contents of the given entry into this one, which has to be empty and of the same type.
+     *
+     * @param source the entry to copy from
+     */
+    public void copyFrom(Statistics source) {
+        if (source.getType() != getType()) {
+            throw new IllegalArgumentException("Statistics entry is not a " + getType().name().toLowerCase());
+        }
+    }
+
 }
