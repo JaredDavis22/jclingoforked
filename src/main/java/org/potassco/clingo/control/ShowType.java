@@ -7,10 +7,9 @@ package org.potassco.clingo.control;
 public class ShowType {
     public enum Type {
 
-        CSP(1), // Select CSP assignments.
         SHOWN(2), // Select shown atoms and terms.
         ATOMS(4), // Select all atoms.
-        TERMS(8), // Select all atoms.
+        TERMS(8), // Select all terms.
         THEORY(16), // Select symbols added by theory.
         ALL(31), // Select everything.
         COMPLEMENT(32); // Select false instead of true atoms or terms.

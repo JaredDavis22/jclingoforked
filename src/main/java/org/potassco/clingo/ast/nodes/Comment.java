@@ -6,6 +6,7 @@ import com.sun.jna.ptr.PointerByReference;
 import org.potassco.clingo.ast.Ast;
 import org.potassco.clingo.ast.AstAttribute;
 import org.potassco.clingo.ast.AstType;
+import org.potassco.clingo.ast.CommentType;
 import org.potassco.clingo.ast.Location;
 import org.potassco.clingo.internal.Clingo;
 
@@ -15,8 +16,8 @@ public class Comment extends Ast {
 		super(ast);
 	}
 
-	public Comment(Location location, String value, int commentType) {
-		super(create(location, value, commentType));
+	public Comment(Location location, String value, CommentType commentType) {
+		super(create(location, value, commentType.getValue()));
 	}
 
 	public Location getLocation() {
@@ -31,10 +32,10 @@ public class Comment extends Ast {
 		return stringByRef[0];
 	}
 
-	public int getCommentType() {
+	public CommentType getCommentType() {
 		IntByReference intByReference = new IntByReference();
 		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.COMMENT_TYPE.getValue(), intByReference));
-		return intByReference.getValue();
+		return CommentType.fromValue(intByReference.getValue());
 	}
 
 	public void setLocation(Location location) {
@@ -45,8 +46,8 @@ public class Comment extends Ast {
 		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.VALUE.getValue(), value));
 	}
 
-	public void setCommentType(int commentType) {
-		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.COMMENT_TYPE.getValue(), commentType));
+	public void setCommentType(CommentType commentType) {
+		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.COMMENT_TYPE.getValue(), commentType.getValue()));
 	}
 
 	private static Pointer create(Location location, String value, int commentType) {

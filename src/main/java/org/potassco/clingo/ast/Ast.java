@@ -19,6 +19,7 @@
 
 package org.potassco.clingo.ast;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -280,6 +281,47 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
      */
     public static void parseString(String program, AstCallback callback, Control control, LoggerCallback logger, int messageLimit) {
         Clingo.check(Clingo.INSTANCE.clingo_ast_parse_string(program, callback, control.getPointer(), null, logger, null, messageLimit));
+    }
+
+    /**
+     * Parse the programs in the given files and return an abstract syntax tree for each statement via a callback.
+     *
+     * @param callback Callable taking an ast as argument.
+     * @param paths    The files to parse.
+     */
+    public static void parseFiles(AstCallback callback, Path... paths) {
+        parseFiles(callback, null, 0, paths);
+    }
+
+    /**
+     * Parse the programs in the given files and return an abstract syntax tree for each statement via a callback.
+     *
+     * @param callback     Callable taking an ast as argument.
+     * @param logger       Function to intercept messages normally printed to standard error.
+     * @param messageLimit The maximum number of messages passed to the logger.
+     * @param paths        The files to parse.
+     */
+    public static void parseFiles(AstCallback callback, LoggerCallback logger, int messageLimit, Path... paths) {
+        String[] files = new String[paths.length];
+        for (int i = 0; i < paths.length; i++) {
+            files[i] = paths[i].toString();
+        }
+        Clingo.check(Clingo.INSTANCE.clingo_ast_parse_files(
+                files, new NativeSize(files.length),
+                callback, null,
+                null,
+                logger, null, messageLimit));
+    }
+
+    /**
+     * Parse the programs in the given files and return a list of abstract syntax trees for each statement.
+     *
+     * @param paths The files to parse.
+     */
+    public static List<Ast> parseFiles(Path... paths) {
+        List<Ast> asts = new ArrayList<>();
+        parseFiles(asts::add, null, 0, paths);
+        return asts;
     }
 
     /**

@@ -145,12 +145,6 @@ public class SymbolicAtoms implements Iterable<SymbolicAtom> {
         return iteratorReference.getValue();
     }
 
-    private boolean nativeIteratorEquals(long iteratorA, long iteratorB) {
-        ByteByReference byteByReference = new ByteByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_symbolic_atoms_iterator_is_equal_to(symbolicAtoms, iteratorA, iteratorB, byteByReference));
-        return byteByReference.getValue() > 0;
-    }
-
     private Iterator<SymbolicAtom> iterator(long nativeIterator) {
         return new Iterator<>() {
 

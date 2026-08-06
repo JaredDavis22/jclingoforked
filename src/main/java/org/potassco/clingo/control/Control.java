@@ -31,6 +31,7 @@ import com.sun.jna.ptr.ByteByReference;
 import com.sun.jna.ptr.LongByReference;
 import com.sun.jna.ptr.PointerByReference;
 import org.potassco.clingo.backend.Backend;
+import org.potassco.clingo.backend.BackendType;
 import org.potassco.clingo.configuration.Configuration;
 import org.potassco.clingo.internal.Clingo;
 import org.potassco.clingo.internal.NativeSize;
@@ -581,6 +582,33 @@ public class Control implements AutoCloseable {
                 nativeObserver,
                 replace ? (byte) 1 : 0,
                 control)
+        );
+    }
+
+    /**
+     * Registers one of clingo's own backends to write the produced grounding to a file.
+     *
+     * @param backendType The kind of backend to register.
+     * @param file        The file to write the result to.
+     */
+    public void registerBackend(BackendType backendType, Path file) {
+        registerBackend(backendType, file, false);
+    }
+
+    /**
+     * Registers one of clingo's own backends to write the produced grounding to a file.
+     *
+     * @param backendType The kind of backend to register.
+     * @param file        The file to write the result to.
+     * @param replace     If set to true, the output is just passed to the backend and no longer to the underlying
+     *                    solver.
+     */
+    public void registerBackend(BackendType backendType, Path file, boolean replace) {
+        Clingo.check(Clingo.INSTANCE.clingo_control_register_backend(
+                control,
+                backendType.getValue(),
+                file.toString(),
+                replace ? (byte) 1 : 0)
         );
     }
 
