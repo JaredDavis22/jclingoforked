@@ -34,26 +34,28 @@ import org.potassco.clingo.symbol.Symbol;
 public class Solver {
 
     public List<AnswerSet> solve(String encoding, String instances, Option... options) {
-        return solve(instances + encoding, options);
+        // a newline is required, because a trailing line comment in the instances would otherwise swallow the first
+        // line of the encoding
+        return solve(instances + "\n" + encoding, options);
     }
 
     public List<AnswerSet> solve(String program, Option... options) {
-        Control control = new Control();
-        control.getConfiguration().set(options);
-        control.add(program);
-        control.ground();
         List<AnswerSet> answers = new ArrayList<>();
-        try (SolveHandle solveHandle = control.solve(new int[0], null, SolveMode.YIELD)) {
-            while (solveHandle.hasNext()) {
-                Model model = solveHandle.next();
-                Symbol[] symbols = model.getSymbols();
-                ModelType type = model.getType();
-                long[] cost = model.getCost();
-                AnswerSet answer = new AnswerSet(Arrays.asList(symbols), type, cost);
-                answers.add(answer);
+        try (Control control = new Control()) {
+            control.getConfiguration().set(options);
+            control.add(program);
+            control.ground();
+            try (SolveHandle solveHandle = control.solve(new int[0], null, SolveMode.YIELD)) {
+                while (solveHandle.hasNext()) {
+                    Model model = solveHandle.next();
+                    Symbol[] symbols = model.getSymbols();
+                    ModelType type = model.getType();
+                    long[] cost = model.getCost();
+                    AnswerSet answer = new AnswerSet(Arrays.asList(symbols), type, cost);
+                    answers.add(answer);
+                }
             }
         }
-        control.close();
         return answers;
     }
 }
