@@ -48,12 +48,12 @@ public class BodyAggregate extends Ast {
         return locationByReference;
     }
 
+    public boolean hasLeftGuard() {
+        return hasOptionalAst(AstAttribute.LEFT_GUARD);
+    }
+
     public Ast getLeftGuard() {
-        PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, AstAttribute.LEFT_GUARD.ordinal(), pointerByReference));
-        if (pointerByReference.getValue() == null)
-            throw new NoSuchElementException("there is no optional ast");
-        return Ast.create(pointerByReference.getValue());
+        return getOptionalAst(AstAttribute.LEFT_GUARD);
     }
 
     public int getFunction() {
@@ -66,12 +66,12 @@ public class BodyAggregate extends Ast {
         return new AstSequence(ast, AstAttribute.ELEMENTS);
     }
 
+    public boolean hasRightGuard() {
+        return hasOptionalAst(AstAttribute.RIGHT_GUARD);
+    }
+
     public Ast getRightGuard() {
-        PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, AstAttribute.RIGHT_GUARD.ordinal(), pointerByReference));
-        if (pointerByReference.getValue() == null)
-            throw new NoSuchElementException("there is no optional ast");
-        return Ast.create(pointerByReference.getValue());
+        return getOptionalAst(AstAttribute.RIGHT_GUARD);
     }
 
     public void setLocation(Location location) {

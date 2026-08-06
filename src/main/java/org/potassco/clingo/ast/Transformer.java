@@ -25,6 +25,7 @@ import org.potassco.clingo.ast.nodes.BinaryOperation;
 import org.potassco.clingo.ast.nodes.BodyAggregate;
 import org.potassco.clingo.ast.nodes.BodyAggregateElement;
 import org.potassco.clingo.ast.nodes.BooleanConstant;
+import org.potassco.clingo.ast.nodes.Comment;
 import org.potassco.clingo.ast.nodes.Comparison;
 import org.potassco.clingo.ast.nodes.ConditionalLiteral;
 import org.potassco.clingo.ast.nodes.Defined;
@@ -71,11 +72,8 @@ import org.potassco.clingo.ast.nodes.Variable;
  * Classes should inherit from this class and implement functions with name
  * <code>visit&lt;AstType&gt;</code> where <code>&lt;AstType&gt;</code> is the type of the ASTs to visit and
  * modify. Such a function should return an updated AST or the same AST if no
- * change is necessary. The transformer will take care to copy all parent ASTs
- * involving a modified child. Note that the class works like a visitor if
- * only self references are returned from such functions.
- * <p>
- * Any extra arguments passed to the visit method are passed on to child ASTs.
+ * change is necessary. Parent ASTs are updated in place, so a transformer modifies the tree it is applied to. Note that
+ * the class works like a visitor if only self references are returned from such functions.
  */
 public class Transformer {
 
@@ -127,6 +125,7 @@ public class Transformer {
             case PROJECT_SIGNATURE: return visit((ProjectSignature) ast);
             case DEFINED: return visit((Defined) ast);
             case THEORY_DEFINITION: return visit((TheoryDefinition) ast);
+            case COMMENT: return visit((Comment) ast);
             default: throw new IllegalStateException("Unknown AST type: " + type.name());
         }
     }
@@ -205,9 +204,13 @@ public class Transformer {
     }
 
     public Aggregate visit(Aggregate aggregate) {
-        aggregate.setLeftGuard(visit(aggregate.getLeftGuard()));
+        if (aggregate.hasLeftGuard()) {
+            aggregate.setLeftGuard(visit(aggregate.getLeftGuard()));
+        }
         aggregate.setElements(visit(aggregate.getElements()));
-        aggregate.setRightGuard(visit(aggregate.getRightGuard()));
+        if (aggregate.hasRightGuard()) {
+            aggregate.setRightGuard(visit(aggregate.getRightGuard()));
+        }
         return aggregate;
     }
 
@@ -218,9 +221,13 @@ public class Transformer {
     }
 
     public BodyAggregate visit(BodyAggregate bodyAggregate) {
-        bodyAggregate.setLeftGuard(visit(bodyAggregate.getLeftGuard()));
+        if (bodyAggregate.hasLeftGuard()) {
+            bodyAggregate.setLeftGuard(visit(bodyAggregate.getLeftGuard()));
+        }
         bodyAggregate.setElements(visit(bodyAggregate.getElements()));
-        bodyAggregate.setRightGuard(visit(bodyAggregate.getRightGuard()));
+        if (bodyAggregate.hasRightGuard()) {
+            bodyAggregate.setRightGuard(visit(bodyAggregate.getRightGuard()));
+        }
         return bodyAggregate;
     }
 
@@ -231,9 +238,13 @@ public class Transformer {
     }
 
     public HeadAggregate visit(HeadAggregate headAggregate) {
-        headAggregate.setLeftGuard(visit(headAggregate.getLeftGuard()));
+        if (headAggregate.hasLeftGuard()) {
+            headAggregate.setLeftGuard(visit(headAggregate.getLeftGuard()));
+        }
         headAggregate.setElements(visit(headAggregate.getElements()));
-        headAggregate.setRightGuard(visit(headAggregate.getRightGuard()));
+        if (headAggregate.hasRightGuard()) {
+            headAggregate.setRightGuard(visit(headAggregate.getRightGuard()));
+        }
         return headAggregate;
     }
 
@@ -276,7 +287,9 @@ public class Transformer {
     public TheoryAtom visit(TheoryAtom theoryAtom) {
         theoryAtom.setTerm(visit(theoryAtom.getTerm()));
         theoryAtom.setElements(visit(theoryAtom.getElements()));
-        theoryAtom.setGuard(visit(theoryAtom.getGuard()));
+        if (theoryAtom.hasGuard()) {
+            theoryAtom.setGuard(visit(theoryAtom.getGuard()));
+        }
         return theoryAtom;
     }
 
@@ -299,7 +312,9 @@ public class Transformer {
     }
 
     public TheoryAtomDefinition visit(TheoryAtomDefinition theoryAtomDefinition) {
-        theoryAtomDefinition.setGuard(visit(theoryAtomDefinition.getGuard()));
+        if (theoryAtomDefinition.hasGuard()) {
+            theoryAtomDefinition.setGuard(visit(theoryAtomDefinition.getGuard()));
+        }
         return theoryAtomDefinition;
     }
 
@@ -382,6 +397,10 @@ public class Transformer {
         theoryDefinition.setTerms(visit(theoryDefinition.getTerms()));
         theoryDefinition.setAtoms(visit(theoryDefinition.getAtoms()));
         return theoryDefinition;
+    }
+
+    public Comment visit(Comment comment) {
+        return comment;
     }
 
 

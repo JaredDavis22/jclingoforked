@@ -57,12 +57,12 @@ public class TheoryAtom extends Ast {
         return new AstSequence(ast, AstAttribute.ELEMENTS);
     }
 
+    public boolean hasGuard() {
+        return hasOptionalAst(AstAttribute.GUARD);
+    }
+
     public Ast getGuard() {
-        PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, AstAttribute.GUARD.ordinal(), pointerByReference));
-        if (pointerByReference.getValue() == null)
-            throw new NoSuchElementException("there is no optional ast");
-        return Ast.create(pointerByReference.getValue());
+        return getOptionalAst(AstAttribute.GUARD);
     }
 
     public void setLocation(Location location) {

@@ -21,6 +21,7 @@ package org.potassco.clingo.ast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -149,6 +150,34 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
         ByteByReference byteByReference = new ByteByReference();
         Clingo.check(Clingo.INSTANCE.clingo_ast_has_attribute(ast, attribute.ordinal(), byteByReference));
         return byteByReference.getValue() > 0;
+    }
+
+    /**
+     * Check whether an optional attribute of this node is set.
+     *
+     * @param attribute the optional attribute to check
+     * @return the result
+     */
+    protected boolean hasOptionalAst(AstAttribute attribute) {
+        PointerByReference pointerByReference = new PointerByReference();
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, attribute.ordinal(), pointerByReference));
+        return pointerByReference.getValue() != null;
+    }
+
+    /**
+     * Get an optional attribute of this node.
+     *
+     * @param attribute the optional attribute to read
+     * @return the attribute value
+     * @throws NoSuchElementException if the attribute is not set
+     */
+    protected Ast getOptionalAst(AstAttribute attribute) {
+        PointerByReference pointerByReference = new PointerByReference();
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, attribute.ordinal(), pointerByReference));
+        if (pointerByReference.getValue() == null) {
+            throw new NoSuchElementException("there is no optional ast " + attribute);
+        }
+        return Ast.create(pointerByReference.getValue());
     }
 
     /**
