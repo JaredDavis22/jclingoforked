@@ -19,6 +19,7 @@
 
 package org.potassco.clingo.ast;
 
+import java.lang.ref.Reference;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 
@@ -210,7 +211,14 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
     public AstList unpool(UnpoolType unpoolType) {
         AstList returnValues = new AstList();
         AstCallback callback = ast -> returnValues.add(ast.retain());
-        Clingo.check(Clingo.INSTANCE.clingo_ast_unpool(getPointer(), unpoolType.getValue(), callback, null));
+        try {
+            Clingo.check(Clingo.INSTANCE.clingo_ast_unpool(getPointer(), unpoolType.getValue(), callback, null));
+        }
+        finally {
+            // jna hands the native side a trampoline and keeps no reference on the callback itself, so without this the
+            // garbage collector may free the trampoline while clingo is still calling it
+            Reference.reachabilityFence(callback);
+        }
         return returnValues;
     }
 
@@ -287,7 +295,12 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
      * @param messageLimit The maximum number of messages passed to the logger.
      */
     public static void parseString(String program, AstCallback callback, LoggerCallback logger, int messageLimit) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_parse_string(program, callback, null, null, logger, null, messageLimit));
+        try {
+            Clingo.check(Clingo.INSTANCE.clingo_ast_parse_string(program, callback, null, null, logger, null, messageLimit));
+        }
+        finally {
+            keepAlive(callback, logger);
+        }
     }
 
     /**
@@ -300,7 +313,12 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
      * @param messageLimit The maximum number of messages passed to the logger.
      */
     public static void parseString(String program, AstCallback callback, Control control, LoggerCallback logger, int messageLimit) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_parse_string(program, callback, control.getPointer(), null, logger, null, messageLimit));
+        try {
+            Clingo.check(Clingo.INSTANCE.clingo_ast_parse_string(program, callback, control.getPointer(), null, logger, null, messageLimit));
+        }
+        finally {
+            keepAlive(callback, logger);
+        }
     }
 
     /**
@@ -326,11 +344,16 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
         for (int i = 0; i < paths.length; i++) {
             files[i] = paths[i].toString();
         }
-        Clingo.check(Clingo.INSTANCE.clingo_ast_parse_files(
-                files, new NativeSize(files.length),
-                callback, null,
-                null,
-                logger, null, messageLimit));
+        try {
+            Clingo.check(Clingo.INSTANCE.clingo_ast_parse_files(
+                    files, new NativeSize(files.length),
+                    callback, null,
+                    null,
+                    logger, null, messageLimit));
+        }
+        finally {
+            keepAlive(callback, logger);
+        }
     }
 
     /**
@@ -435,6 +458,16 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
             throw new IllegalStateException("this ast node was already released");
         }
         return ast;
+    }
+
+    /**
+     * Keeps callbacks reachable until the native call using them has returned. jna hands the native side a trampoline
+     * and keeps no reference on the callback itself, so the garbage collector may otherwise free that trampoline while
+     * clingo is still calling it.
+     */
+    private static void keepAlive(Object callback, Object logger) {
+        Reference.reachabilityFence(callback);
+        Reference.reachabilityFence(logger);
     }
 
     /**
