@@ -61,18 +61,15 @@ public class SolveControl {
      *
      * @param symbols    array of symbols representing the clause
      * @param truthValue the truth value
+     * @throws NoSuchElementException if one of the symbols is not an atom of the program
      */
     public void addClause(Symbol[] symbols, TruthValue truthValue) {
         SymbolicAtoms symbolicAtoms = getSymbolicAtoms();
         int[] literals = new int[symbols.length];
-        for (int i = 0; i < literals.length; i++)
-            try {
-                literals[i] = symbolicAtoms.get(symbols[i]).getLiteral();
-                literals[i] = truthValue == TruthValue.TRUE || truthValue == TruthValue.FREE ? literals[i] : -literals[i];
-            } catch (NoSuchElementException e) {
-                literals[i] = -1;
-            }
-
+        for (int i = 0; i < literals.length; i++) {
+            int literal = symbolicAtoms.get(symbols[i]).getLiteral();
+            literals[i] = truthValue == TruthValue.FALSE ? -literal : literal;
+        }
         addClause(literals);
     }
 
@@ -96,12 +93,7 @@ public class SolveControl {
      * @param truthValue the truth value to invert
      */
     public void addNogood(Symbol[] symbols, TruthValue truthValue) {
-        if (truthValue == TruthValue.TRUE)
-            addClause(symbols, TruthValue.FALSE);
-        else if (truthValue == TruthValue.FALSE)
-            addClause(symbols, TruthValue.TRUE);
-        else
-            addNogood(symbols, TruthValue.FREE);
+        addClause(symbols, truthValue == TruthValue.FALSE ? TruthValue.TRUE : TruthValue.FALSE);
     }
 
     /**
