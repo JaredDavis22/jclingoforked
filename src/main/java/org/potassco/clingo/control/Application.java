@@ -1,5 +1,6 @@
 package org.potassco.clingo.control;
 
+import java.lang.ref.Reference;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,14 @@ public interface Application {
             registerOptions(options);
         };
         nativeApplication.validateOptions = this::validateOptions;
-        return Clingo.INSTANCE.clingo_main(nativeApplication, arguments, new NativeSize(arguments.length), null);
+        try {
+            return Clingo.INSTANCE.clingo_main(nativeApplication, arguments, new NativeSize(arguments.length), null);
+        }
+        finally {
+            // jna hands the native side a trampoline per callback in the struct and keeps no reference on the callbacks
+            // themselves, so without this the garbage collector may free a trampoline while clingo is still calling it
+            Reference.reachabilityFence(nativeApplication);
+        }
     }
 
     /**

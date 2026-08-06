@@ -19,6 +19,8 @@
 
 package org.potassco.clingo.symbol;
 
+import java.lang.ref.Reference;
+
 import com.sun.jna.Native;
 import com.sun.jna.ptr.LongByReference;
 import org.potassco.clingo.control.LoggerCallback;
@@ -97,7 +99,14 @@ public abstract class Symbol implements Comparable<Symbol> {
      */
     public static Symbol fromString(String term, LoggerCallback logger) {
         LongByReference longByReference = new LongByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_parse_term(term, logger, null, 0, longByReference));
+        try {
+            Clingo.check(Clingo.INSTANCE.clingo_parse_term(term, logger, null, 0, longByReference));
+        }
+        finally {
+            // jna hands the native side a trampoline and keeps no reference on the callback itself, so without this the
+            // garbage collector may free the trampoline while clingo is still calling it
+            Reference.reachabilityFence(logger);
+        }
         return Symbol.fromLong(longByReference.getValue());
     }
 

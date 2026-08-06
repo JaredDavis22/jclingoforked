@@ -19,6 +19,7 @@
 
 package org.potassco.clingo.control;
 
+import java.lang.ref.Reference;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,8 +59,9 @@ public class Control implements AutoCloseable {
 
     private final Pointer control;
 
-    // clingo copies the callback structs by value but keeps the raw function pointers in them. JNA frees a native
-    // trampoline as soon as its Java callback becomes unreachable, so registered callbacks have to be kept alive.
+    // clingo copies the callback structs by value but keeps the raw function pointers in them, and it keeps the logger
+    // of this control for as long as the control exists. JNA frees a native trampoline as soon as its Java callback
+    // becomes unreachable, so every callback clingo holds on to has to be kept alive here.
     private final List<Object> registeredCallbacks = new ArrayList<>();
 
     private Backend backend;
@@ -84,6 +86,10 @@ public class Control implements AutoCloseable {
      */
     public Control(LoggerCallback logger, int messageLimit, String... arguments) {
         PointerByReference controlObjectRef = new PointerByReference();
+        // clingo reports messages of every later grounding step to this logger, so it must live as long as the control
+        if (logger != null) {
+            registeredCallbacks.add(logger);
+        }
         Clingo.check(Clingo.INSTANCE.clingo_control_new(
                 arguments,
                 new NativeSize(arguments == null ? 0 : arguments.length),
@@ -168,11 +174,16 @@ public class Control implements AutoCloseable {
      */
     public void ground(String name, GroundCallback callback) {
         ProgramPart[] programParts = (ProgramPart[]) new ProgramPart(name).toArray(1);
-        Clingo.check(Clingo.INSTANCE.clingo_control_ground(
-                this.control,
-                programParts, new NativeSize(1),
-                callback, null)
-        );
+        try {
+            Clingo.check(Clingo.INSTANCE.clingo_control_ground(
+                    this.control,
+                    programParts, new NativeSize(1),
+                    callback, null)
+            );
+        }
+        finally {
+            keepAlive(callback);
+        }
     }
 
     /**
@@ -207,11 +218,16 @@ public class Control implements AutoCloseable {
             contiguous[1 + i].size = programParts[i].size;
             contiguous[1 + i].params = programParts[i].params;
         }
-        Clingo.check(Clingo.INSTANCE.clingo_control_ground(
-                this.control,
-                contiguous, new NativeSize(contiguous.length),
-                groundCallback, control)
-        );
+        try {
+            Clingo.check(Clingo.INSTANCE.clingo_control_ground(
+                    this.control,
+                    contiguous, new NativeSize(contiguous.length),
+                    groundCallback, control)
+            );
+        }
+        finally {
+            keepAlive(groundCallback);
+        }
     }
 
     /**
@@ -789,5 +805,15 @@ public class Control implements AutoCloseable {
 
     public Pointer getPointer() {
         return control;
+    }
+
+    /**
+     * Keeps a callback reachable until the native call using it has returned. jna hands the native side a trampoline
+     * and keeps no reference on the callback itself, so the garbage collector may otherwise free that trampoline while
+     * clingo is still calling it. Callbacks clingo keeps beyond a single call need a lasting reference instead, in
+     * {@link #registeredCallbacks} or, for a solve event callback, in the {@link SolveHandle} of that search.
+     */
+    private static void keepAlive(Object callback) {
+        Reference.reachabilityFence(callback);
     }
 }
