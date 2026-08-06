@@ -166,6 +166,9 @@ public class SymbolicAtoms implements Iterable<SymbolicAtom> {
 
             @Override
             public SymbolicAtom next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 SymbolicAtom symbolicAtom = new SymbolicAtom(symbolicAtoms, longByReference.getValue());
                 Clingo.check(Clingo.INSTANCE.clingo_symbolic_atoms_next(symbolicAtoms, longByReference.getValue(), longByReference));
                 return symbolicAtom;

@@ -20,6 +20,7 @@
 package org.potassco.clingo.propagator;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.ByteByReference;
@@ -71,7 +72,7 @@ public class Assignment implements Iterable<Integer> {
         assert end > begin;
         int[] literals = new int[end - begin];
         for (int i = begin; i < end; i++) {
-            literals[i] = get(i);
+            literals[i - begin] = get(i);
         }
         return literals;
     }
@@ -227,11 +228,14 @@ public class Assignment implements Iterable<Integer> {
 
             @Override
             public boolean hasNext() {
-                return i < size - 1;
+                return i < size;
             }
 
             @Override
             public Integer next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 return get(i++);
             }
         };

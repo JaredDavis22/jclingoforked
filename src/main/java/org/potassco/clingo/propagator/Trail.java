@@ -20,6 +20,7 @@
 package org.potassco.clingo.propagator;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
@@ -108,11 +109,14 @@ public class Trail implements Iterable<Integer> {
 
             @Override
             public boolean hasNext() {
-                return i < size - 1;
+                return i < size;
             }
 
             @Override
             public Integer next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 Clingo.check(Clingo.INSTANCE.clingo_assignment_trail_at(assignment, i++, intByReference));
                 return intByReference.getValue();
             }
