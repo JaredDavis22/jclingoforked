@@ -71,7 +71,7 @@ public abstract class Symbol implements Comparable<Symbol> {
         int length = (int) nativeSizeByRef.getValue();
         byte[] symbolBytes = new byte[length];
         Clingo.check(Clingo.INSTANCE.clingo_symbol_to_string(symbol, symbolBytes, new NativeSize(length)));
-        return Native.toString(symbolBytes);
+        return Native.toString(symbolBytes, Clingo.STRING_ENCODING);
     }
 
     /**

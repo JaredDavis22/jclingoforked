@@ -21,6 +21,7 @@ package org.potassco.clingo.internal;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 import com.sun.jna.Callback;
 import com.sun.jna.LastErrorException;
@@ -58,11 +59,15 @@ import org.potassco.clingo.symbol.Symbol;
 
 public interface Clingo extends Library {
 
+    /**
+     * The encoding clingo uses for all strings it consumes and produces.
+     */
+    String STRING_ENCODING = "UTF-8";
+
     Clingo INSTANCE = loadLibrary();
 
     static Clingo loadLibrary() {
-        System.setProperty("jna.encoding", "UTF-8");
-        return Native.load("clingo", Clingo.class);  // options
+        return Native.load("clingo", Clingo.class, Map.of(Library.OPTION_STRING_ENCODING, STRING_ENCODING));
     }
 
     static String getVersion() {
@@ -3950,11 +3955,16 @@ public interface Clingo extends Library {
      */
     @FunctionalInterface
     interface MainFunctionCallback extends Callback {
-        default byte callback(Pointer control, String[] files, NativeSize size, Pointer data) {
+        // the file array is not NULL terminated, so it must not be mapped to String[]. JNA would walk it past its end
+        // looking for a terminator before the explicit size is ever consulted.
+        default byte callback(Pointer control, Pointer files, NativeSize size, Pointer data) {
             int amountFiles = size.intValue();
             Path[] filePaths = new Path[amountFiles];
+            String[] fileNames = amountFiles == 0
+                    ? new String[0]
+                    : files.getStringArray(0, amountFiles, STRING_ENCODING);
             for (int i = 0; i < amountFiles; i++) {
-                filePaths[i] = Paths.get(files[i]);
+                filePaths[i] = Paths.get(fileNames[i]);
             }
             call(new Control(control), filePaths);
             return 1;

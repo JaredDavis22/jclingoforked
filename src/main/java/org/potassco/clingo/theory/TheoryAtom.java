@@ -127,6 +127,6 @@ public class TheoryAtom implements Comparable<TheoryAtom> {
         int stringSize = (int) nativeSizeByReference.getValue();
         byte[] atomBytes = new byte[stringSize];
         Clingo.check(Clingo.INSTANCE.clingo_theory_atoms_atom_to_string(theoryAtoms, id, atomBytes, new NativeSize(stringSize)));
-        return Native.toString(atomBytes);
+        return Native.toString(atomBytes, Clingo.STRING_ENCODING);
     }
 }

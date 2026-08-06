@@ -268,7 +268,7 @@ public class Configuration {
         int valueSize = (int) nativeSizeByReference.getValue();
         byte[] valueBytes = new byte[valueSize];
         Clingo.check(Clingo.INSTANCE.clingo_configuration_value_get(configuration, key, valueBytes, new NativeSize(valueSize)));
-        return Native.toString(valueBytes);
+        return Native.toString(valueBytes, Clingo.STRING_ENCODING);
     }
 
     /**

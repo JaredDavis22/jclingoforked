@@ -107,8 +107,7 @@ public abstract class Ast implements Comparable<Ast> {
         int stringSize = (int) nativeSizeByReference.getValue();
         byte[] stringBytes = new byte[stringSize];
         Clingo.check(Clingo.INSTANCE.clingo_ast_to_string(ast, stringBytes, new NativeSize(stringSize)));
-        // return Native.toString(stringBytes);
-        return Native.toString(stringBytes);
+        return Native.toString(stringBytes, Clingo.STRING_ENCODING);
     }
 
     /**
