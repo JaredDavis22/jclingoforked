@@ -52,4 +52,20 @@ public class WeightedLiteral extends Structure {
         return Arrays.asList("literal", "weight");
     }
 
+    /**
+     * Copies the given literals into an array clingo can read, or returns null for an empty array. Structures handed to
+     * clingo have to occupy contiguous memory, which is not the case for individually allocated ones.
+     */
+    public static WeightedLiteral[] toContiguousArray(WeightedLiteral[] literals) {
+        if (literals.length == 0) {
+            return null;
+        }
+        WeightedLiteral[] contiguousArray = (WeightedLiteral[]) new WeightedLiteral().toArray(literals.length);
+        for (int i = 0; i < literals.length; i++) {
+            contiguousArray[i].literal = literals[i].literal;
+            contiguousArray[i].weight = literals[i].weight;
+        }
+        return contiguousArray;
+    }
+
 }

@@ -134,13 +134,7 @@ public class Backend implements AutoCloseable {
 	 * @param priority Integer for the priority.
 	 */
 	public void addMinimize(WeightedLiteral[] literals, int priority) {
-		//TODO: JNA exception "Structure array elements must use contiguous memory"
-		// is there a better way than to recreate a contiguous array?
-		WeightedLiteral[] contiguousArray = (WeightedLiteral[]) (new WeightedLiteral()).toArray(literals.length);
-		for (int i = 0; i < literals.length; i++) {
-			contiguousArray[i].literal = literals[i].literal;
-			contiguousArray[i].weight = literals[i].weight;
-		}
+		WeightedLiteral[] contiguousArray = WeightedLiteral.toContiguousArray(literals);
 		Clingo.check(Clingo.INSTANCE.clingo_backend_minimize(backend, priority, contiguousArray, new NativeSize(literals.length)));
 	}
 
@@ -182,13 +176,7 @@ public class Backend implements AutoCloseable {
 	 * @param choice     Whether to add a disjunctive or choice rule.
 	 */
 	public void addWeightRule(int[] head, int lowerBound, WeightedLiteral[] body, boolean choice) {
-		//TODO: JNA exception "Structure array elements must use contiguous memory"
-		// is there a better way than to recreate a contiguous array?
-		WeightedLiteral[] contiguousArray = (WeightedLiteral[]) (new WeightedLiteral()).toArray(body.length);
-		for (int i = 0; i < body.length; i++) {
-			contiguousArray[i].literal = body[i].literal;
-			contiguousArray[i].weight = body[i].weight;
-		}
+		WeightedLiteral[] contiguousArray = WeightedLiteral.toContiguousArray(body);
 		Clingo.check(Clingo.INSTANCE.clingo_backend_weight_rule(
 				backend,
 				choice ? (byte) 1 : 0,

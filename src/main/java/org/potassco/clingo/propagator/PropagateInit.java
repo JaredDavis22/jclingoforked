@@ -174,11 +174,7 @@ public class PropagateInit {
      */
     public boolean addWeightConstraint(int literal, WeightedLiteral[] literals, int bound, WeightConstraintType type, boolean compareEqual) {
         ByteByReference byteByReference = new ByteByReference();
-        WeightedLiteral[] weightedLiterals = (WeightedLiteral[]) (new WeightedLiteral()).toArray(literals.length);
-        for (int i = 0; i < weightedLiterals.length; i++) {
-            weightedLiterals[i].literal = literals[i].literal;
-            weightedLiterals[i].weight = literals[i].weight;
-        }
+        WeightedLiteral[] weightedLiterals = WeightedLiteral.toContiguousArray(literals);
         Clingo.check(Clingo.INSTANCE.clingo_propagate_init_add_weight_constraint(
                 propagateInit,
                 literal,
