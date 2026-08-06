@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.potassco.clingo.control.Application;
 import org.potassco.clingo.control.ApplicationOptions;
@@ -20,7 +19,6 @@ import org.potassco.clingo.symbol.Symbol;
 /**
  * Test application covering most of the Application related API.
  */
-@Ignore
 public class ApplicationTest implements Application {
 
     private final List<String> queue = new ArrayList<>();

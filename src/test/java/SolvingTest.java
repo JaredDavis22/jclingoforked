@@ -3,6 +3,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 import org.junit.After;
@@ -54,11 +55,11 @@ public class SolvingTest {
 	public void testModelString() {
 		control.add("a.");
 		control.ground();
-		try (SolveHandle handle = control.solve()) {
-			while (handle.hasNext()) {
-				Model model = handle.next();
-				Assert.assertEquals("a", model.toString());
-			}
+		// only a yielding handle hands out models, a blocking one iterates as if it were empty
+		try (SolveHandle handle = control.solve(SolveMode.YIELD)) {
+			Assert.assertTrue(handle.hasNext());
+			Assert.assertEquals("a", handle.next().toString());
+			Assert.assertFalse(handle.hasNext());
 		}
 	}
 
@@ -418,6 +419,64 @@ public class SolvingTest {
 		Assert.assertArrayEquals(new Symbol[] { new Function("a"), new Function("d") }, mcb.models.get(5).symbols);
 		Assert.assertArrayEquals(new Symbol[] { new Function("a"), new Function("c") }, mcb.models.get(6).symbols);
 		Assert.assertArrayEquals(new Symbol[] { new Function("a"), new Function("c"), new Function("d") }, mcb.models.get(7).symbols);
+	}
+
+	/**
+	 * A callback can end the search early instead of being told about every model.
+	 */
+	@Test
+	public void testStopSearch() {
+		SolveEventCallback callback = new SolveEventCallback() {
+			int seen;
+
+			@Override
+			public void onModel(Model model) {
+				if (++seen == 2) {
+					stop();
+				}
+			}
+		};
+		control.add("{a; b; c}.");
+		control.ground();
+		SolveResult result = control.solve(callback).getSolveResult();
+		Assert.assertTrue(result.satisfiable());
+		Assert.assertFalse(result.exhausted());
+	}
+
+	/**
+	 * A symbol that is not an atom of the program has no literal, and turning it into one silently would extend the
+	 * clause by an unrelated literal.
+	 */
+	@Test
+	public void testUnknownSymbolInClause() {
+		control.add("1 {a; b} 1.");
+		control.ground();
+		try (SolveHandle handle = control.solve(SolveMode.YIELD)) {
+			Assert.assertTrue(handle.hasNext());
+			Model model = handle.next();
+			Assert.assertThrows(
+					NoSuchElementException.class,
+					() -> model.getContext().addClause(new Symbol[] { new Function("z") }, TruthValue.TRUE)
+			);
+		}
+	}
+
+	/**
+	 * Every truth value has to terminate, including the one that names no polarity.
+	 */
+	@Test
+	public void testNogoodFree() {
+		control.add("1 {a; b; c} 1.");
+		control.ground();
+		try (SolveHandle handle = control.solve(mcb, SolveMode.YIELD)) {
+			while (handle.hasNext()) {
+				Model model = handle.next();
+				Symbol chosen = model.contains(new Function("a")) ? new Function("a") : new Function("b");
+				model.getContext().addNogood(new Symbol[] { chosen }, TruthValue.FREE);
+			}
+			testSatisfiable(handle.getSolveResult());
+		}
+		Assert.assertTrue(mcb.models.size() <= 3);
 	}
 
 	private int lookupLiteral(Model model, String name) {

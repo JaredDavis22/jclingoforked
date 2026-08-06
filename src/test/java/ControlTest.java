@@ -3,15 +3,22 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.potassco.clingo.control.Control;
+import org.potassco.clingo.control.ErrorCode;
 import org.potassco.clingo.control.LoggerCallback;
 import org.potassco.clingo.control.ProgramPart;
+import org.potassco.clingo.internal.ClingoRuntimeException;
 import org.potassco.clingo.solving.GroundCallback;
+import org.potassco.clingo.solving.Model;
 import org.potassco.clingo.solving.SolveEventCallback;
+import org.potassco.clingo.solving.SolveHandle;
+import org.potassco.clingo.solving.SolveMode;
 import org.potassco.clingo.solving.SolveResult;
+import org.potassco.clingo.solving.TruthValue;
 import org.potassco.clingo.symbol.Function;
 import org.potassco.clingo.symbol.Number;
 import org.potassco.clingo.symbol.Symbol;
@@ -165,46 +172,172 @@ public class ControlTest {
         control.close();
     }
 
-    //TODO: find a way to test errors
-    // error are correctly thrown, but the testing methods do not work
-//    @Test(expected = IllegalStateException.class)
-//    public void testGroundError() {
-//        GroundCallback groundCallback = new GroundCallback() {
-//            public void cb_error(Symbol number) {
-//                throw new NoSuchElementException();
-//            }
-//        };
-//
-//        Control control = new Control();
-//        control.add("base", "p(@cb_error(c)).");
-//        control.ground(groundCallback);
-//
-//        control.close();
-//    }
+    /**
+     * An exception raised by an external function has to abort grounding and reach the caller.
+     */
+    @Test
+    public void testGroundError() {
+        GroundCallback groundCallback = new GroundCallback() {
+            public Symbol cb_error(Symbol argument) {
+                throw new IllegalArgumentException("no value for " + argument);
+            }
+        };
 
+        try (Control control = new Control()) {
+            control.add("p(@cb_error(1)).");
+            ClingoRuntimeException exception = Assert.assertThrows(
+                    ClingoRuntimeException.class,
+                    () -> control.ground(groundCallback)
+            );
+            Assert.assertEquals(ErrorCode.UNKNOWN, exception.getErrorCode());
+            Assert.assertTrue(exception.getMessage().contains("no value for 1"));
+        }
+    }
 
-//    @Test(expected = ArithmeticException.class)
-//    public void testErrorHandling() {
-//        SolveEventCallback callback = new SolveEventCallback() {
-//            @Override
-//            public void onModel(Model model) {
-//                int x = 1 / 0;
-//            }
-//        };
-//
-//        Control control = new Control();
-//        control.add("base", "1 {a; b} 1.");
-//        control.ground();
-//        Assert.assertThrows(ArithmeticException.class, () -> control.solve(callback));
-//
-//        try (SolveHandle handle = control.solve(callback, SolveMode.YIELD)) {
-//            Assert.assertThrows(ArithmeticException.class, handle::getSolveResult);
-//        }
-//
-//        try (SolveHandle handle = control.solve(callback, SolveMode.ASYNC)) {
-//            Assert.assertThrows(ArithmeticException.class, handle::getSolveResult);
-//        }
-//
-//        control.close();
-//    }
+    /**
+     * A single ground callback can serve more than one control, because the sink to inject symbols into is not kept as
+     * instance state.
+     */
+    @Test
+    public void testGroundCallbackReuse() {
+        GroundCallback groundCallback = new GroundCallback() {
+            public Symbol twice(Symbol number) {
+                return ((Number) number).mul(2);
+            }
+        };
+
+        for (int i = 1; i <= 2; i++) {
+            try (Control control = new Control()) {
+                control.add("p(@twice(" + i + ")).");
+                control.ground(groundCallback);
+                List<Symbol> symbols = new ArrayList<>();
+                control.getSymbolicAtoms().forEach(atom -> symbols.add(atom.getSymbol()));
+                Assert.assertEquals(List.of(new Function("p", new Number(2 * i))), symbols);
+            }
+        }
+    }
+
+    /**
+     * Injecting symbols outside of a call from clingo would write through a stale pointer.
+     */
+    @Test
+    public void testGroundOutsideCallback() {
+        GroundCallback groundCallback = new GroundCallback() {
+        };
+        Assert.assertThrows(IllegalStateException.class, () -> groundCallback.addSymbols(new Number(1)));
+    }
+
+    /**
+     * clingo terminates the process when a solve event callback reports failure, so an exception raised by one has to
+     * surface through the solve handle instead.
+     */
+    @Test
+    public void testSolveEventError() {
+        for (SolveMode solveMode : List.of(SolveMode.NONE, SolveMode.YIELD, SolveMode.ASYNC)) {
+            SolveEventCallback callback = new SolveEventCallback() {
+                @Override
+                public void onModel(Model model) {
+                    throw new IllegalStateException("model rejected");
+                }
+            };
+            try (Control control = new Control()) {
+                control.add("1 {a; b} 1.");
+                control.ground();
+                try (SolveHandle handle = control.solve(callback, solveMode)) {
+                    IllegalStateException exception = Assert.assertThrows(
+                            IllegalStateException.class,
+                            handle::getSolveResult
+                    );
+                    Assert.assertEquals("model rejected", exception.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * The last event of a search is reported after clingo stopped accepting failures, so an exception raised there has
+     * to surface as well.
+     */
+    @Test
+    public void testSolveResultError() {
+        SolveEventCallback callback = new SolveEventCallback() {
+            @Override
+            public void onResult(SolveResult result) {
+                throw new IllegalStateException("result rejected");
+            }
+        };
+        try (Control control = new Control()) {
+            control.add("1 {a; b} 1.");
+            control.ground();
+            try (SolveHandle handle = control.solve(callback)) {
+                IllegalStateException exception = Assert.assertThrows(
+                        IllegalStateException.class,
+                        handle::getSolveResult
+                );
+                Assert.assertEquals("result rejected", exception.getMessage());
+            }
+        }
+    }
+
+    /**
+     * A failing clingo call reports a code the caller can act on.
+     */
+    @Test
+    public void testErrorCode() {
+        // the message is asserted on, so it does not have to be logged as well
+        try (Control control = new Control((code, message) -> {}, 0)) {
+            ClingoRuntimeException exception = Assert.assertThrows(
+                    ClingoRuntimeException.class,
+                    () -> control.add("a :-")
+            );
+            Assert.assertEquals(ErrorCode.RUNTIME, exception.getErrorCode());
+        }
+    }
+
+    /**
+     * Freeing the same native object twice would be a double free.
+     */
+    @Test
+    public void testDoubleClose() {
+        Control control = new Control();
+        control.add("a.");
+        control.ground();
+        SolveHandle handle = control.solve();
+        handle.getSolveResult();
+        handle.close();
+        handle.close();
+        control.close();
+        control.close();
+    }
+
+    /**
+     * Assigning an external takes a truth value, and releasing it is a separate operation.
+     */
+    @Test
+    public void testAssignExternal() {
+        try (Control control = new Control("0")) {
+            control.add("#external a. b :- a.");
+            control.ground();
+
+            Symbol[] external = { new Function("a") };
+            Assert.assertEquals(List.of(""), solveSymbols(control));
+            control.assignExternal(external, TruthValue.TRUE);
+            Assert.assertEquals(List.of("a b"), solveSymbols(control));
+            control.assignExternal(external, TruthValue.FALSE);
+            Assert.assertEquals(List.of(""), solveSymbols(control));
+            control.assignExternal(external, TruthValue.FREE);
+            Assert.assertEquals(List.of("", "a b"), solveSymbols(control));
+            control.releaseExternal(external);
+            control.assignExternal(external, TruthValue.TRUE);
+            Assert.assertEquals(List.of(""), solveSymbols(control));
+        }
+    }
+
+    private List<String> solveSymbols(Control control) {
+        SolvingTest.TestCallback callback = new SolvingTest.TestCallback();
+        control.solve(callback).getSolveResult();
+        return callback.models.stream()
+                .map(model -> Arrays.stream(model.symbols).map(Symbol::toString).collect(Collectors.joining(" ")))
+                .collect(Collectors.toList());
+    }
 }

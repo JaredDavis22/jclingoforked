@@ -1,6 +1,9 @@
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -441,6 +444,69 @@ public class AstTest {
         List<Ast> program = new ArrayList<>();
         Ast.parseString("p(X) :- q(X).", ast -> program.add(transformer.visit(ast)));
         Assert.assertEquals("p(_X) :- q(_X).", program.get(program.size() - 1).toString());
+    }
+
+    /**
+     * Aggregates and theory atoms carry optional guards, and a program can contain comments. Visiting either must not
+     * depend on the optional attributes being present.
+     */
+    @Test
+    public void testTransformerOptionalAttributes() {
+        Transformer transformer = new Transformer() {
+            @Override
+            public Variable visit(Variable variable) {
+                return new Variable(variable.getLocation(), "_" + variable.getName());
+            }
+        };
+        String program = "% comment\n" +
+                         "1 < { a(X) } :- b(X).\n" +
+                         "1 < #count { X: c(X) } :- d(X).\n" +
+                         "e(X) :- 1 < #count { X: f(X) }.\n" +
+                         "&g { X } :- h(X).\n" +
+                         "#theory t {\n  u { + : 1, unary };\n  &g/0: u, head\n}.\n";
+        List<String> transformed = new ArrayList<>();
+        Ast.parseString(program, ast -> transformed.add(transformer.visit(ast).toString()));
+        Assert.assertEquals(
+                List.of(
+                        "#program base.",
+                        "% comment",
+                        "1 < { a(_X) } :- b(_X).",
+                        "1 < #count { _X: c(_X) } :- d(_X).",
+                        "e(_X) :- 1 < #count { _X: f(_X) }.",
+                        "&g { _X } :- h(_X).",
+                        "#theory t {\n  u {\n    + : 1, unary\n  };\n  &g/0: u, head\n}."
+                ),
+                transformed
+        );
+    }
+
+    /**
+     * Nodes handed out by the binding own a reference of their own, so a child stays usable after its parent was
+     * released, and releasing twice is harmless.
+     */
+    @Test
+    public void testNodeLifetime() {
+        Ast body;
+        List<Ast> program = Ast.parseString("a :- b.");
+        try (Ast rule = program.get(program.size() - 1)) {
+            body = ((Rule) rule).getBody().get(0);
+        }
+        Assert.assertEquals("b", body.toString());
+        body.close();
+        body.close();
+    }
+
+    @Test
+    public void testParseFiles() throws IOException {
+        Path file = Files.createTempFile("jclingo", ".lp");
+        try {
+            Files.writeString(file, "a. b :- a.");
+            List<String> statements = Ast.parseFiles(file).stream().map(Ast::toString).collect(Collectors.toList());
+            Assert.assertEquals(List.of("#program base.", "a.", "b :- a."), statements);
+        }
+        finally {
+            Files.deleteIfExists(file);
+        }
     }
 
     private Map<AstType, List<String>> getMapping() {

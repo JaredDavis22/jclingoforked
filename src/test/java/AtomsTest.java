@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -145,6 +146,21 @@ public class AtomsTest {
         Assert.assertTrue(symbolicAtoms.contains(new Function("p", false, new Number(1))));
         Assert.assertTrue(symbolicAtoms.contains(new Function("q", new Number(2))));
         Assert.assertFalse(symbolicAtoms.contains(new Function("q", false, new Number(2))));
+    }
+
+    /**
+     * An exhausted iterator has to say so instead of handing out an atom backed by a past the end native iterator.
+     */
+    @Test
+    public void testSymbolicAtomsIteratorExhausted() {
+        control.add("p(1).");
+        control.ground();
+
+        Iterator<SymbolicAtom> iterator = control.getSymbolicAtoms().iterator();
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals(new Function("p", new Number(1)), iterator.next().getSymbol());
+        Assert.assertFalse(iterator.hasNext());
+        Assert.assertThrows(NoSuchElementException.class, iterator::next);
     }
 
     @Test

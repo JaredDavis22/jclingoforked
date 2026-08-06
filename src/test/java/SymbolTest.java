@@ -1,8 +1,9 @@
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.potassco.clingo.control.LoggerCallback;
 import org.potassco.clingo.control.WarningCode;
@@ -39,11 +40,22 @@ public class SymbolTest {
         Assert.assertTrue((new Number(2)).compareTo(new Number(1)) > 0);
     }
 
-    @Ignore // Hashing is currently not implemented
     @Test
     public void testHashing() {
         Assert.assertEquals(new Number(10).hashCode(), new Number(10).hashCode());
         Assert.assertNotEquals(new Number(1).hashCode(), new Number(2).hashCode());
+    }
+
+    @Test
+    public void testSignatureHashing() {
+        Set<Signature> signatures = new HashSet<>();
+        signatures.add(new Signature("f", 1));
+        signatures.add(new Signature("f", 1));
+        signatures.add(new Signature("f", 2));
+        signatures.add(new Signature("f", 1, false));
+        Assert.assertEquals(3, signatures.size());
+        Assert.assertTrue(signatures.contains(new Signature("f", 1)));
+        Assert.assertFalse(signatures.contains(new Signature("g", 1)));
     }
 
     @Test

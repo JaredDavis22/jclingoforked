@@ -1,10 +1,18 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.potassco.clingo.backend.Backend;
+import org.potassco.clingo.backend.BackendType;
+import org.potassco.clingo.backend.WeightedLiteral;
 import org.potassco.clingo.control.Control;
+import org.potassco.clingo.solving.SolveHandle;
+import org.potassco.clingo.solving.SolveMode;
+import org.potassco.clingo.symbol.Function;
 import org.potassco.clingo.symbol.Symbol;
 import org.potassco.clingo.theory.TheoryAtom;
 import org.potassco.clingo.theory.TheoryElement;
@@ -67,6 +75,62 @@ public class BackendTest {
 					new int[] { 1, -2, 3 },
 					theoryElements[theoryElements.length - 1].getConditions()
 			);
+		}
+	}
+
+	/**
+	 * An empty body is legal in a weight rule, and so is an empty minimize statement.
+	 */
+	@Test
+	public void testEmptyWeightedLiterals() {
+		try (Control control = new Control()) {
+			try (Backend backend = control.getBackend()) {
+				int atom = backend.addAtom(new Function("a"));
+				backend.addWeightRule(new int[] { atom }, 0, new WeightedLiteral[0], false);
+				backend.addMinimize(new WeightedLiteral[0], 0);
+			}
+			control.ground();
+			try (SolveHandle handle = control.solve(SolveMode.YIELD)) {
+				Assert.assertTrue(handle.hasNext());
+				Assert.assertEquals("a", handle.next().toString());
+			}
+		}
+	}
+
+	/**
+	 * Obtaining the backend starts a batch of statements, so the same object is handed out until it is closed. Closing
+	 * it twice must not end the batch twice.
+	 */
+	@Test
+	public void testBackendReuse() {
+		try (Control control = new Control()) {
+			Backend backend = control.getBackend();
+			Assert.assertSame(backend, control.getBackend());
+			backend.close();
+			backend.close();
+			Assert.assertTrue(backend.isClosed());
+			Backend next = control.getBackend();
+			Assert.assertNotSame(backend, next);
+			next.close();
+		}
+	}
+
+	/**
+	 * Registers one of clingo's own backends and checks that it writes the grounding.
+	 */
+	@Test
+	public void testRegisterBackend() throws IOException {
+		Path file = Files.createTempFile("jclingo", ".aspif");
+		try (Control control = new Control()) {
+			control.registerBackend(BackendType.ASPIF, file);
+			control.add("a. b :- a.");
+			control.ground();
+			control.solve().getSolveResult();
+		}
+		finally {
+			// the backend only flushes once the control is gone
+			Assert.assertTrue(Files.readString(file).startsWith("asp 1 0 0"));
+			Files.deleteIfExists(file);
 		}
 	}
 }

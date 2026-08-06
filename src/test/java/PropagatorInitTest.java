@@ -3,6 +3,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.potassco.clingo.backend.WeightedLiteral;
@@ -73,10 +74,19 @@ public class PropagatorInitTest implements Propagator {
         Assert.assertFalse(assignment.isConflicting());
         Assert.assertFalse(assignment.isTotal());
         Assert.assertEquals(0, assignment.getRootLevel());
-        Assert.assertTrue(assignment.size() >= 4);
+        int size = assignment.size();
+        Assert.assertTrue(size >= 4);
+
+        // the iterator has to yield every literal, and a slice has to be indexed relative to its own start
         List<Integer> assignments = new ArrayList<>();
         assignment.iterator().forEachRemaining(assignments::add);
-        Assert.assertTrue(assignments.size() >= 4);
+        Assert.assertEquals(size, assignments.size());
+        Assert.assertEquals(assignments.subList(0, size), boxed(assignment.get(0, size)));
+        Assert.assertEquals(assignments.subList(2, size), boxed(assignment.get(2, size)));
+    }
+
+    private static List<Integer> boxed(int[] literals) {
+        return Arrays.stream(literals).boxed().collect(Collectors.toList());
     }
 
 }

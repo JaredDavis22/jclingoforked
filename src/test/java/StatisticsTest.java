@@ -69,7 +69,18 @@ public class StatisticsTest {
         Assert.assertEquals(1, map.get("c").size());
         Assert.assertEquals(3.0, map.get("c.d").get(), 1e-9);
 
-        // TODO: set user_accu correctly
+        // setting a map entry copies the source recursively, so the accumulated tree mirrors the step tree as it was
+        // at the time of the copy
+        StatisticsMap accumulated = (StatisticsMap) statistics.get("user_accu.test");
+        Assert.assertEquals(3, accumulated.size());
+        Assert.assertEquals("a", accumulated.getKey(0));
+        Assert.assertEquals(0.0, accumulated.get("a").get(), 1e-9);
+        Assert.assertEquals("b", accumulated.getKey(1));
+        Assert.assertEquals(2, accumulated.get("b").size());
+        Assert.assertEquals(1.0, accumulated.get("b").get(0).get(), 1e-9);
+        Assert.assertEquals(2.0, accumulated.get("b").get(1).get(), 1e-9);
+        Assert.assertEquals("c", accumulated.getKey(2));
+        Assert.assertEquals(3.0, accumulated.get("c.d").get(), 1e-9);
 
         control.close();
     }
