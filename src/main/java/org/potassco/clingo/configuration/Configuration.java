@@ -28,11 +28,11 @@ import com.sun.jna.ptr.ByteByReference;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 import org.potassco.clingo.configuration.args.Option;
+import org.potassco.clingo.configuration.args.Statistics;
 import org.potassco.clingo.control.Control;
 import org.potassco.clingo.internal.Clingo;
 import org.potassco.clingo.internal.NativeSize;
 import org.potassco.clingo.internal.NativeSizeByReference;
-import org.potassco.clingo.statistics.Statistics;
 
 import static org.potassco.clingo.configuration.ConfigurationType.Type.*;
 
@@ -246,7 +246,7 @@ public class Configuration {
      * @return the resulting entry
      */
     public Configuration get(int index) {
-        if (!isType(MAP))
+        if (!isType(ARRAY))
             throw new IllegalStateException("Configuration entry is not an array");
         IntByReference keyIdentifier = new IntByReference();
         Clingo.check(Clingo.INSTANCE.clingo_configuration_array_at(configuration, key, new NativeSize(index), keyIdentifier));
@@ -359,7 +359,7 @@ public class Configuration {
      * @param level the level of output
      */
     public void setStatisticsLevel(Statistics level) {
-        set("stats", level.toString());
+        set(level);
     }
 
     /**
