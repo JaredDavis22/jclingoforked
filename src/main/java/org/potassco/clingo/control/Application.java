@@ -1,6 +1,8 @@
 package org.potassco.clingo.control;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.potassco.clingo.internal.Clingo;
 import org.potassco.clingo.internal.NativeSize;
@@ -17,6 +19,10 @@ public interface Application {
      */
     default int run(String... arguments) {
         // TODO: maybe set callbacks to null if not implemented
+        // the options object outlives registerOptions, because clingo keeps the parse callbacks and flags it holds
+        // until the run is over. The closure below anchors it in the native application struct, which stays reachable
+        // for the whole call to clingo_main.
+        List<ApplicationOptions> registeredOptions = new ArrayList<>();
         Clingo.Application nativeApplication = new Clingo.Application();
         nativeApplication.programName = this::getName;
         nativeApplication.version = this::getVersion;
@@ -24,7 +30,10 @@ public interface Application {
         nativeApplication.main = this::main;
         nativeApplication.logger = this::log;
         nativeApplication.modelPrinter = this::printModel;
-        nativeApplication.registerOptions = this::registerOptions;
+        nativeApplication.registerOptions = options -> {
+            registeredOptions.add(options);
+            registerOptions(options);
+        };
         nativeApplication.validateOptions = this::validateOptions;
         return Clingo.INSTANCE.clingo_main(nativeApplication, arguments, new NativeSize(arguments.length), null);
     }

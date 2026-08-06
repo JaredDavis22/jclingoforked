@@ -19,12 +19,19 @@
  
 package org.potassco.clingo.control;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.sun.jna.Pointer;
 import org.potassco.clingo.internal.Clingo;
 
 public class ApplicationOptions {
 
     private final Pointer options;
+
+    // clingo keeps the raw function pointer of a parse callback and the address of a flag until the run is over. JNA
+    // frees a native trampoline as soon as its Java callback becomes unreachable, so both have to be kept alive.
+    private final List<Object> registeredCallbacks = new ArrayList<>();
 
     public ApplicationOptions(Pointer pointer) {
         this.options = pointer;
@@ -47,6 +54,7 @@ public class ApplicationOptions {
      * @param callback    callback to parse the value of the option
      */
     public void addOption(String group, String option, String description, ParseCallback callback) {
+        registeredCallbacks.add(callback);
         Clingo.check(Clingo.INSTANCE.clingo_options_add(
                 options,
                 group,
@@ -78,6 +86,7 @@ public class ApplicationOptions {
      * @param argument    optional string to change the value name in the generated help output
      */
     public void addOption(String group, String option, String description, ParseCallback callback, boolean multi, String argument) {
+        registeredCallbacks.add(callback);
         Clingo.check(Clingo.INSTANCE.clingo_options_add(
                 options,
                 group,
@@ -102,6 +111,7 @@ public class ApplicationOptions {
      * @param target      boolean set to true if the flag is given on the command-line
      */
     public void addFlag(String group, String option, String description, Flag target) {
+        registeredCallbacks.add(target);
         Clingo.check(Clingo.INSTANCE.clingo_options_add_flag(options, group, option, description, target.getFlag()));
     }
 }

@@ -20,8 +20,10 @@
 package org.potassco.clingo.control;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import com.sun.jna.Pointer;
@@ -54,6 +56,10 @@ import org.potassco.clingo.theory.TheoryAtoms;
 public class Control implements AutoCloseable {
 
     private final Pointer control;
+
+    // clingo copies the callback structs by value but keeps the raw function pointers in them. JNA frees a native
+    // trampoline as soon as its Java callback becomes unreachable, so registered callbacks have to be kept alive.
+    private final List<Object> registeredCallbacks = new ArrayList<>();
 
     public Control() {
         this(null, 0);
@@ -302,7 +308,7 @@ public class Control implements AutoCloseable {
                 control,
                 pointerByReference
         ));
-        return new SolveHandle(pointerByReference.getValue());
+        return new SolveHandle(pointerByReference.getValue(), callback);
     }
 
     /**
@@ -564,6 +570,7 @@ public class Control implements AutoCloseable {
         nativeObserver.theoryElement = observer::theoryElement;
         nativeObserver.theoryAtom = observer::theoryAtom;
         nativeObserver.theoryAtomWithGuard = observer::theoryAtomWithGuard;
+        registeredCallbacks.add(nativeObserver);
 
         Clingo.check(Clingo.INSTANCE.clingo_control_register_observer(
                 control,
@@ -602,6 +609,7 @@ public class Control implements AutoCloseable {
         nativePropagator.undo = propagator::undo;
         nativePropagator.check = propagator::check;
         nativePropagator.decide = propagator::decide;
+        registeredCallbacks.add(nativePropagator);
         Clingo.check(Clingo.INSTANCE.clingo_control_register_propagator(
                 control,
                 nativePropagator,

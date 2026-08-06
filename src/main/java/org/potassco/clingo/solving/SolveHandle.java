@@ -39,12 +39,22 @@ import org.potassco.clingo.internal.NativeSizeByReference;
 public class SolveHandle implements AutoCloseable, Iterator<Model> {
 
     private final Pointer solveHandle;
+
+    // clingo keeps the raw function pointer of the event callback for the whole search. JNA frees a native trampoline
+    // as soon as its Java callback becomes unreachable, so the callback has to stay alive as long as the handle does.
+    private final SolveEventCallback eventCallback;
+
     private Model currentModel;
 
     private boolean continueIteration = true;
 
     public SolveHandle(Pointer solveHandle) {
+        this(solveHandle, null);
+    }
+
+    public SolveHandle(Pointer solveHandle, SolveEventCallback eventCallback) {
         this.solveHandle = solveHandle;
+        this.eventCallback = eventCallback;
     }
 
     /**
