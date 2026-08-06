@@ -28,17 +28,16 @@ import org.potassco.clingo.statistics.Statistics;
 /**
  * Callback function called during search to notify when the search is finished or a model is ready.
  * <p>
- * If a (non-recoverable) clingo API function fails in this callback, it must return false.
- * In case of errors not related to clingo, set error code ::clingo_error_unknown and return false to stop solving with an error.
- * <p>
- * The event is either a pointer to a model, a pointer to an int64_t* and a size_t, a pointer to two statistics objects (per step and accumulated statistics), or a solve result.
- * If the search is finished, the model is NULL.
+ * An exception thrown by one of the handlers stops the search and is rethrown by the {@link SolveHandle}. Calling
+ * {@link #stop()} stops the search without an error.
  * <p>
  * You have to inherit from this class to implement your own callback.
  */
 public abstract class SolveEventCallback implements Callback {
 
     private Throwable pendingError;
+
+    private boolean stopped;
 
     /**
      * @param event the current event.
@@ -52,13 +51,24 @@ public abstract class SolveEventCallback implements Callback {
         }
         catch (Throwable error) {
             // clingo exits the process when a solve event callback reports failure, so the error is remembered here
-            // and rethrown by the solve handle instead. Setting goon stops the search as soon as possible.
+            // and rethrown by the solve handle instead
             if (pendingError == null) {
                 pendingError = error;
             }
+            stopped = true;
+        }
+        if (stopped) {
             goon.setValue((byte) 0);
         }
         return 1;
+    }
+
+    /**
+     * Stops the search. Can be called from any of the handlers below, but only takes effect for models and lower
+     * bounds, because clingo ignores the request once the search is finished.
+     */
+    protected void stop() {
+        stopped = true;
     }
 
     /**
