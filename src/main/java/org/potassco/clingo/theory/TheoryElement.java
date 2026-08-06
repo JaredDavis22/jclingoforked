@@ -19,6 +19,8 @@
  
 package org.potassco.clingo.theory;
 
+import java.util.Objects;
+
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
@@ -46,9 +48,16 @@ public class TheoryElement implements Comparable<TheoryElement> {
 
 
 
+    /**
+     * Orders elements of the same container by id. Elements of different containers have no meaningful order, so
+     * comparing them is rejected.
+     */
     @Override
     public int compareTo(TheoryElement other) {
-        return Integer.compare(this.hashCode(), other.hashCode());
+        if (!theoryAtoms.equals(other.theoryAtoms)) {
+            throw new IllegalArgumentException("cannot compare elements of different theory atom containers");
+        }
+        return Integer.compare(id, other.id);
     }
 
     /**
@@ -93,17 +102,24 @@ public class TheoryElement implements Comparable<TheoryElement> {
         // TODO: return something different than ints?
     }
 
+    /**
+     * Two elements are equal if they have the same id and belong to the same container.
+     */
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TheoryElement that = (TheoryElement) o;
-        return this.hashCode() == that.hashCode();
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null || getClass() != other.getClass()) {
+            return false;
+        }
+        TheoryElement that = (TheoryElement) other;
+        return id == that.id && theoryAtoms.equals(that.theoryAtoms);
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return Objects.hash(theoryAtoms, id);
     }
 
     @Override

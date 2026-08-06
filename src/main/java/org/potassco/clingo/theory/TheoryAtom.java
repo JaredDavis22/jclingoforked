@@ -20,8 +20,10 @@
 package org.potassco.clingo.theory;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import com.sun.jna.Native;
+
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.ByteByReference;
 import com.sun.jna.ptr.IntByReference;
@@ -47,22 +49,36 @@ public class TheoryAtom implements Comparable<TheoryAtom> {
         this.id = id;
     }
 
+    /**
+     * Two items are equal if they have the same id and belong to the same container.
+     */
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TheoryAtom that = (TheoryAtom) o;
-        return this.hashCode() == that.hashCode();
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null || getClass() != other.getClass()) {
+            return false;
+        }
+        TheoryAtom that = (TheoryAtom) other;
+        return id == that.id && theoryAtoms.equals(that.theoryAtoms);
     }
 
+    /**
+     * Orders items of the same container by id. Items of different containers have no meaningful order, so comparing
+     * them is rejected.
+     */
     @Override
     public int compareTo(TheoryAtom other) {
-        return Integer.compare(this.hashCode(), other.hashCode());
+        if (!theoryAtoms.equals(other.theoryAtoms)) {
+            throw new IllegalArgumentException("cannot compare items of different theory atom containers");
+        }
+        return Integer.compare(id, other.id);
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return Objects.hash(theoryAtoms, id);
     }
 
     /**
@@ -75,14 +91,22 @@ public class TheoryAtom implements Comparable<TheoryAtom> {
     }
 
     /**
-     * @return The guard of the atom or null if the atom has no guard
+     * @return whether the atom has a guard
      */
-    public TheoryGuard getGuard() {
+    public boolean hasGuard() {
         ByteByReference byteByReference = new ByteByReference();
         Clingo.check(Clingo.INSTANCE.clingo_theory_atoms_atom_has_guard(theoryAtoms, id, byteByReference));
+        return byteByReference.getValue() > 0;
+    }
 
-        if (byteByReference.getValue() == 0)
+    /**
+     * @return The guard of the atom
+     * @throws NoSuchElementException if the atom has no guard
+     */
+    public TheoryGuard getGuard() {
+        if (!hasGuard()) {
             throw new NoSuchElementException("theory atom has no guard");
+        }
 
         String[] stringByReference = new String[1];
         IntByReference intByReference = new IntByReference();

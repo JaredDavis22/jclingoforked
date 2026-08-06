@@ -19,7 +19,10 @@
  
 package org.potassco.clingo.theory;
 
+import java.util.Objects;
+
 import com.sun.jna.Native;
+
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
@@ -89,21 +92,36 @@ public class TheoryTerm implements Comparable<TheoryTerm> {
         return theoryTerms;
     }
 
+    /**
+     * Two items are equal if they have the same id and belong to the same container.
+     */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof TheoryTerm))
+        if (this == other) {
+            return true;
+        }
+        if (other == null || getClass() != other.getClass()) {
             return false;
-        return this.hashCode() == other.hashCode();
+        }
+        TheoryTerm that = (TheoryTerm) other;
+        return id == that.id && theoryAtoms.equals(that.theoryAtoms);
     }
 
+    /**
+     * Orders items of the same container by id. Items of different containers have no meaningful order, so comparing
+     * them is rejected.
+     */
     @Override
     public int compareTo(TheoryTerm other) {
-        return Integer.compare(this.hashCode(), other.hashCode());
+        if (!theoryAtoms.equals(other.theoryAtoms)) {
+            throw new IllegalArgumentException("cannot compare items of different theory atom containers");
+        }
+        return Integer.compare(id, other.id);
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return Objects.hash(theoryAtoms, id);
     }
 
     @Override
