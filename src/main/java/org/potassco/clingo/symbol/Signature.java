@@ -121,6 +121,25 @@ public class Signature implements Comparable<Signature> {
     }
 
     /**
+     * Compute a native 64-bit hash for a signature.
+     * Note that {@link #hashCode()} re-uses this method, but returns a 32-bit value.
+     *
+     * @return the resulting hash code
+     */
+    public long getHash() {
+        return Clingo.INSTANCE.clingo_signature_hash(signature).longValue();
+    }
+
+    /**
+     * Calculates a Java hash for this object.
+     * Note, that this method relies on the native hash (see {@link #getHash()}), but consists of 32-bit only.
+     */
+    @Override
+    public int hashCode() {
+        return Long.hashCode(getHash());
+    }
+
+    /**
      * Check if a signature is less than another signature.
      * Signatures are compared first by sign (int &lt; signed), then by arity, then by name.
      *
