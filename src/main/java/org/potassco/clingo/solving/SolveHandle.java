@@ -67,6 +67,7 @@ public class SolveHandle implements AutoCloseable, Iterator<Model> {
     @Override
     public void close() {
         Clingo.check(Clingo.INSTANCE.clingo_solve_handle_close(solveHandle));
+        rethrowEventCallbackError();
     }
 
     /**
@@ -74,6 +75,7 @@ public class SolveHandle implements AutoCloseable, Iterator<Model> {
      */
     public void resume() {
         Clingo.check(Clingo.INSTANCE.clingo_solve_handle_resume(solveHandle));
+        rethrowEventCallbackError();
     }
 
     /**
@@ -112,7 +114,29 @@ public class SolveHandle implements AutoCloseable, Iterator<Model> {
     public SolveResult getSolveResult() {
         IntByReference intByReference = new IntByReference();
         Clingo.check(Clingo.INSTANCE.clingo_solve_handle_get(solveHandle, intByReference));
+        rethrowEventCallbackError();
         return new SolveResult(intByReference.getValue());
+    }
+
+    /**
+     * Propagates an exception a user event callback raised. clingo would exit the process if the callback reported the
+     * failure to it, so the error is carried over and surfaces here instead.
+     */
+    private void rethrowEventCallbackError() {
+        if (eventCallback == null) {
+            return;
+        }
+        Throwable error = eventCallback.takePendingError();
+        if (error == null) {
+            return;
+        }
+        if (error instanceof RuntimeException) {
+            throw (RuntimeException) error;
+        }
+        if (error instanceof Error) {
+            throw (Error) error;
+        }
+        throw new IllegalStateException("solve event callback failed", error);
     }
 
     /**

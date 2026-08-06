@@ -3,7 +3,6 @@ package org.potassco.clingo.solving;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Enumeration of solve events.
@@ -40,7 +39,11 @@ public enum SolveEventType {
     }
 
     public static SolveEventType fromValue(int type) {
-        return Objects.requireNonNull(mapping.get(type));
+        SolveEventType solveEventType = mapping.get(type);
+        if (solveEventType == null) {
+            throw new IllegalArgumentException("unknown solve event type " + type);
+        }
+        return solveEventType;
     }
 
     private final int type;

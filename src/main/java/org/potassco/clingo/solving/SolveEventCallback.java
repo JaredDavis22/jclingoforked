@@ -37,6 +37,9 @@ import org.potassco.clingo.statistics.Statistics;
  * You have to inherit from this class to implement your own callback.
  */
 public abstract class SolveEventCallback implements Callback {
+
+    private Throwable pendingError;
+
     /**
      * @param event the current event.
      * @param data  user data of the callback
@@ -44,6 +47,30 @@ public abstract class SolveEventCallback implements Callback {
      * @return whether the call was successful
      */
     public byte callback(int code, Pointer event, Pointer data, ByteByReference goon) {
+        try {
+            dispatch(code, event);
+        }
+        catch (Throwable error) {
+            // clingo exits the process when a solve event callback reports failure, so the error is remembered here
+            // and rethrown by the solve handle instead. Setting goon stops the search as soon as possible.
+            if (pendingError == null) {
+                pendingError = error;
+            }
+            goon.setValue((byte) 0);
+        }
+        return 1;
+    }
+
+    /**
+     * Returns and forgets the first error a user callback raised, or null if there was none.
+     */
+    Throwable takePendingError() {
+        Throwable error = pendingError;
+        pendingError = null;
+        return error;
+    }
+
+    private void dispatch(int code, Pointer event) {
         SolveEventType type = SolveEventType.fromValue(code);
         switch (type) {
             case MODEL:
@@ -66,7 +93,6 @@ public abstract class SolveEventCallback implements Callback {
             default:
                 throw new IllegalStateException("unknown solve event type " + type);
         }
-        return 1;
     }
 
     public void onModel(Model model) {
