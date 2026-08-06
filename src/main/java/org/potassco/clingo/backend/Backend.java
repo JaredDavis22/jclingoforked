@@ -40,6 +40,8 @@ public class Backend implements AutoCloseable {
 
 	private final Pointer backend;
 
+	private boolean closed;
+
 	public Backend(Pointer backend) {
 		this.backend = backend;
 		Clingo.check(Clingo.INSTANCE.clingo_backend_begin(backend));
@@ -428,8 +430,22 @@ public class Backend implements AutoCloseable {
 		return intByReference.getValue();
 	}
 
+	/**
+	 * @return whether the batch of statements has already been ended
+	 */
+	public boolean isClosed() {
+		return closed;
+	}
+
+	/**
+	 * Ends the batch of statements. Repeated calls have no effect.
+	 */
 	@Override
 	public void close() {
+		if (closed) {
+			return;
+		}
+		closed = true;
 		Clingo.check(Clingo.INSTANCE.clingo_backend_end(backend));
 	}
 }

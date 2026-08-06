@@ -48,6 +48,8 @@ public class SolveHandle implements AutoCloseable, Iterator<Model> {
 
     private boolean continueIteration = true;
 
+    private boolean closed;
+
     public SolveHandle(Pointer solveHandle) {
         this(solveHandle, null);
     }
@@ -64,8 +66,15 @@ public class SolveHandle implements AutoCloseable, Iterator<Model> {
         Clingo.check(Clingo.INSTANCE.clingo_solve_handle_cancel(solveHandle));
     }
 
+    /**
+     * Stops the search and frees the native handle. Repeated calls have no effect.
+     */
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
+        closed = true;
         Clingo.check(Clingo.INSTANCE.clingo_solve_handle_close(solveHandle));
         rethrowEventCallbackError();
     }

@@ -61,6 +61,10 @@ public class Control implements AutoCloseable {
     // trampoline as soon as its Java callback becomes unreachable, so registered callbacks have to be kept alive.
     private final List<Object> registeredCallbacks = new ArrayList<>();
 
+    private Backend backend;
+
+    private boolean closed;
+
     public Control() {
         this(null, 0);
     }
@@ -686,12 +690,18 @@ public class Control implements AutoCloseable {
     }
 
     /**
+     * A control has a single backend, and obtaining it starts a batch of statements that is ended by closing it. This
+     * method therefore returns the same object until that batch has been closed.
+     *
      * @return a {@link Backend} object providing a low level interface to extend a logic program.
      */
     public Backend getBackend() {
-        PointerByReference backendRef = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_control_backend(control, backendRef));
-        return new Backend(backendRef.getValue());
+        if (backend == null || backend.isClosed()) {
+            PointerByReference backendRef = new PointerByReference();
+            Clingo.check(Clingo.INSTANCE.clingo_control_backend(control, backendRef));
+            backend = new Backend(backendRef.getValue());
+        }
+        return backend;
     }
 
     /**
@@ -737,11 +747,15 @@ public class Control implements AutoCloseable {
     }
 
     /**
-     * Frees the native control object.
-     * This java object must not be used after calling this method.
+     * Frees the native control object. This java object must not be used after calling this method. Repeated calls have
+     * no effect.
      */
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
+        closed = true;
         Clingo.INSTANCE.clingo_control_free(control);
     }
 
