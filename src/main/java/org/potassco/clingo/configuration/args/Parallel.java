@@ -21,6 +21,11 @@ package org.potassco.clingo.configuration.args;
 
 public class Parallel implements Option {
 
+    /**
+     * The largest number of search threads clingo supports.
+     */
+    public static final int MAX_THREADS = 64;
+
     private final int nThreads;
     private final Mode mode;
 
@@ -29,8 +34,8 @@ public class Parallel implements Option {
     }
 
     public Parallel(int nThreads, Mode mode) {
-        if (nThreads < 1 || nThreads > 64)
-            throw new IllegalStateException("Amount of threads n used by clingo must be 0 < n <= 64");
+        if (nThreads < 1 || nThreads > MAX_THREADS)
+            throw new IllegalStateException("Amount of threads n used by clingo must be 0 < n <= " + MAX_THREADS);
         this.nThreads = nThreads;
         this.mode = mode;
     }
@@ -59,9 +64,12 @@ public class Parallel implements Option {
         return new Parallel(2);
     }
 
+    /**
+     * @return one thread per available core, capped at the {@link #MAX_THREADS} clingo supports
+     */
     public static Parallel available() {
         int nCores = Runtime.getRuntime().availableProcessors();
-        return new Parallel(nCores);
+        return new Parallel(Math.min(nCores, MAX_THREADS));
     }
 
     @Override

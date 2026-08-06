@@ -19,24 +19,37 @@
  
 package org.potassco.clingo.configuration.args;
 
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+/**
+ * The optimization algorithm used by the solver. Initial bounds for the objective functions can be added with
+ * {@link #withBounds(long...)}, which is what {@link #Enum} needs to enumerate models below a cost.
+ */
 public enum OptMode implements Option {
 
-    Optimal("opt", false),
-    Enum("enum", true),
-    OptimalN("optN", false),
-    Ignore("ignore", false);
+    Optimal("opt"),
+    Enum("enum"),
+    OptimalN("optN"),
+    Ignore("ignore");
 
     private final String mode;
-    private final boolean requiresBound;
-    private String bound;
 
-    OptMode(String mode, boolean requiresBound) {
+    OptMode(String mode) {
         this.mode = mode;
-        this.requiresBound = requiresBound;
     }
 
-    public void setBound(String bound) {
-        this.bound = bound;
+    /**
+     * Returns this mode with initial bounds for the objective functions.
+     *
+     * @param bounds one bound per objective function
+     * @return the bounded option
+     */
+    public Option withBounds(long... bounds) {
+        if (bounds.length == 0) {
+            return this;
+        }
+        return new Bounded(this, bounds);
     }
 
     @Override
@@ -51,14 +64,50 @@ public enum OptMode implements Option {
 
     @Override
     public String getValue() {
-        if (requiresBound && bound == null)
-            throw new IllegalStateException("OptMode '" + mode + "' requires a bound");
-        return this.mode;
+        return mode;
     }
 
     @Override
     public Option getDefault() {
         return OptMode.Optimal;
+    }
+
+    private static final class Bounded implements Option {
+
+        private final OptMode optMode;
+        private final long[] bounds;
+
+        private Bounded(OptMode optMode, long[] bounds) {
+            this.optMode = optMode;
+            this.bounds = bounds.clone();
+        }
+
+        @Override
+        public String getShellKey() {
+            return optMode.getShellKey();
+        }
+
+        @Override
+        public String getNativeKey() {
+            return optMode.getNativeKey();
+        }
+
+        @Override
+        public String getValue() {
+            return optMode.mode + "," + LongStream.of(bounds)
+                    .mapToObj(String::valueOf)
+                    .collect(Collectors.joining(","));
+        }
+
+        @Override
+        public Option getDefault() {
+            return optMode.getDefault();
+        }
+
+        @Override
+        public String toString() {
+            return getValue();
+        }
     }
 
 }

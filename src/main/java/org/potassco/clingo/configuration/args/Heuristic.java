@@ -23,25 +23,39 @@
  
 package org.potassco.clingo.configuration.args;
 
+/**
+ * The decision heuristic used by the solver. Every heuristic uses clingo's default parameter unless one is given with
+ * {@link #withParameter(int)}.
+ */
 public enum Heuristic implements Option {
-    Berkmin("Berkmin", false),
+    Berkmin("Berkmin", true),
     Vmtf("Vmtf", true),
     Vsids("Vsids", true),
-    Domain("Domain", false),
+    Domain("Domain", true),
     Unit("Unit", false),
     None("None", false);
 
     private final String mode;
-    private final boolean requiresFactor;
-    private String factor;
+    private final boolean lookback;
 
-    Heuristic(String mode, boolean requiresFactor) {
+    Heuristic(String mode, boolean lookback) {
         this.mode = mode;
-        this.requiresFactor = requiresFactor;
+        this.lookback = lookback;
     }
 
-    public void setFactor(int factor) {
-        this.factor = String.valueOf(factor);
+    /**
+     * Returns this heuristic with an explicit parameter. Its meaning depends on the heuristic, for example the number of
+     * nogoods to check for Berkmin and the decay factor for Vsids.
+     *
+     * @param parameter the heuristic parameter
+     * @return the parameterized option
+     * @throws IllegalStateException if the heuristic does not take a parameter
+     */
+    public Option withParameter(int parameter) {
+        if (!lookback) {
+            throw new IllegalStateException("Heuristic '" + mode + "' does not take a parameter");
+        }
+        return new Parameterized(this, parameter);
     }
 
     @Override
@@ -56,15 +70,47 @@ public enum Heuristic implements Option {
 
     @Override
     public String getValue() {
-        if (requiresFactor && factor == null)
-            throw new IllegalStateException("Heuristic '" + mode + "' requires a factor");
         return mode;
     }
 
     @Override
     public Option getDefault() {
-        Heuristic heuristic = Heuristic.Vsids;
-        heuristic.setFactor(92);
-        return heuristic;
+        return Heuristic.Vsids;
+    }
+
+    private static final class Parameterized implements Option {
+
+        private final Heuristic heuristic;
+        private final int parameter;
+
+        private Parameterized(Heuristic heuristic, int parameter) {
+            this.heuristic = heuristic;
+            this.parameter = parameter;
+        }
+
+        @Override
+        public String getShellKey() {
+            return heuristic.getShellKey();
+        }
+
+        @Override
+        public String getNativeKey() {
+            return heuristic.getNativeKey();
+        }
+
+        @Override
+        public String getValue() {
+            return heuristic.mode + "," + parameter;
+        }
+
+        @Override
+        public Option getDefault() {
+            return heuristic.getDefault();
+        }
+
+        @Override
+        public String toString() {
+            return getValue();
+        }
     }
 }
