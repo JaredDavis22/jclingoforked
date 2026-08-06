@@ -37,16 +37,14 @@ import org.potassco.clingo.symbol.Symbol;
  * then this function is called with its location, name, parameters, and a callback to inject symbols as arguments.
  * The callback can be called multiple times; all symbols passed are injected.
  * <p>
- * If a (non-recoverable) clingo API function fails in this callback, for example, the symbol callback, the callback must
- * return false.
- * <p>
- * In case of errors not related to clingo, this function can set an error with {@link ErrorCode#UNKNOWN} and return
- * false to stop grounding with an error.
+ * An exception thrown by an external function stops grounding and is reported to clingo as
+ * {@link ErrorCode#UNKNOWN}.
  */
 public abstract class GroundCallback implements Callback {
 
-    private Clingo.SymbolCallback symbolCallback;
-    private Pointer symbolCallbackData;
+    // the sink to inject symbols into is only valid while clingo is calling this object, and it is held per thread so
+    // that a single instance can be used by more than one control
+    private final ThreadLocal<SymbolSink> symbolSink = new ThreadLocal<>();
 
     /**
      * @param locationPointer    location from which the external function was called
@@ -66,11 +64,19 @@ public abstract class GroundCallback implements Callback {
             Pointer data,
             Clingo.SymbolCallback symbolCallback,
             Pointer symbolCallbackData) {
+        return Clingo.guard(() -> {
+            SymbolSink previousSink = symbolSink.get();
+            symbolSink.set(new SymbolSink(symbolCallback, symbolCallbackData));
+            try {
+                ground(locationPointer, name, argumentsPointer, argumentsSize.intValue());
+            }
+            finally {
+                symbolSink.set(previousSink);
+            }
+        });
+    }
 
-        this.symbolCallback = symbolCallback;
-        this.symbolCallbackData = symbolCallbackData;
-
-        int size = argumentsSize.intValue();
+    private void ground(Pointer locationPointer, String name, Pointer argumentsPointer, int size) {
 
         // create array of method argument types including the position in the file, e. g. for add(1, 1)
         // [Location.class, Symbol.class, Symbol.class]
@@ -91,7 +97,8 @@ public abstract class GroundCallback implements Callback {
             for (int i = 0; i < symbols.length; i++) {
                 args[1 + i] = Symbol.fromLong(symbols[i]);
             }
-            return invokeMethod(method, args);
+            invokeMethod(method, args);
+            return;
         }
 
         // else, if it cannot be found, try to find the method without the location argument
@@ -120,59 +127,77 @@ public abstract class GroundCallback implements Callback {
         for (int i = 0; i < symbols.length; i++) {
             args[i] = Symbol.fromLong(symbols[i]);
         }
-        return invokeMethod(method, args);
+        invokeMethod(method, args);
     }
 
     private Method findMethod(String name, Class<?>[] parameterTypes) {
-        Method method = null;
+        Method method;
         try {
             method = this.getClass().getMethod(name, parameterTypes);
         } catch (SecurityException e) {
-            throw new IllegalStateException("your platform does not support grounding callbacks");
+            throw new IllegalStateException("your platform does not support grounding callbacks", e);
         } catch (NoSuchMethodException ignored) {
+            return null;
         }
 
-        try {
-            Class<?> returnType = method.getReturnType();
-            assert returnType == void.class || returnType == Symbol.class;
-        } catch (AssertionError err) {
-            throw new IllegalStateException("'" + method.getName() + "' returns something different than a Symbol");
-        } catch (NullPointerException ignored) {
-
+        Class<?> returnType = method.getReturnType();
+        if (returnType != void.class && returnType != Symbol.class && returnType != Symbol[].class) {
+            throw new IllegalStateException("'" + name + "' returns something different than a Symbol");
         }
-
         return method;
     }
 
-    private byte invokeMethod(Method method, Object[] args) {
+    private void invokeMethod(Method method, Object[] args) {
+        Object ret;
         try {
             method.setAccessible(true);
-            Object ret = method.invoke(this, args);
-
-            if (ret instanceof Symbol) {
-                addSymbols((Symbol) ret);
+            ret = method.invoke(this, args);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("Could not invoke method '" + method.getName() + "'", e);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
             }
-
-            if (ret instanceof Symbol[]) {
-                addSymbols((Symbol[]) ret);
+            if (cause instanceof Error) {
+                throw (Error) cause;
             }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException("Could not invoke method '" + method.getName() + "'");
+            throw new IllegalStateException("Method '" + method.getName() + "' failed", cause);
         }
-        return 1;
+
+        if (ret instanceof Symbol) {
+            addSymbols((Symbol) ret);
+        }
+        else if (ret instanceof Symbol[]) {
+            addSymbols((Symbol[]) ret);
+        }
     }
 
     /**
-     * Inject symbols in the program.
+     * Inject symbols in the program. Can only be called while clingo is calling an external function of this object.
      *
      * @param symbols the symbols to inject
      */
     public void addSymbols(Symbol... symbols) {
+        SymbolSink sink = symbolSink.get();
+        if (sink == null) {
+            throw new IllegalStateException("symbols can only be injected while grounding");
+        }
         long[] symbolLongs = new long[symbols.length];
         for (int i = 0; i < symbols.length; i++) {
             symbolLongs[i] = symbols[i].getLong();
         }
-        NativeSize size = new NativeSize(symbols.length);
-        symbolCallback.callback(symbolLongs, size, symbolCallbackData);
+        Clingo.check(sink.callback.callback(symbolLongs, new NativeSize(symbols.length), sink.data));
+    }
+
+    private static final class SymbolSink {
+
+        private final Clingo.SymbolCallback callback;
+        private final Pointer data;
+
+        private SymbolSink(Clingo.SymbolCallback callback, Pointer data) {
+            this.callback = callback;
+            this.data = data;
+        }
     }
 }
