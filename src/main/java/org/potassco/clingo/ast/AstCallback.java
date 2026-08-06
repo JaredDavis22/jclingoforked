@@ -21,6 +21,7 @@ package org.potassco.clingo.ast;
 
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
+import org.potassco.clingo.internal.Clingo;
 
 /**
  * Callback function to intercept AST nodes.
@@ -33,6 +34,8 @@ public interface AstCallback extends Callback {
      * @return whether the call was successful
      */
     default byte callback(Pointer ast, Pointer data) {
+        // clingo does not increment the reference count of a node it passes to a callback, so the wrapper has to
+        Clingo.INSTANCE.clingo_ast_acquire(ast);
         call(Ast.create(ast));
         return 1;
     }

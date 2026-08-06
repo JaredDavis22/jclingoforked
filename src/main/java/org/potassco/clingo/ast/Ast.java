@@ -90,14 +90,22 @@ import org.potassco.clingo.internal.NativeSizeByReference;
  * representation of any AST obtained from {@link #parseString(String)}
  * can be parsed again. Note that it is possible to construct ASTs
  * that are not parsable, though.
+ * <p>
+ * An <code>Ast</code> holds a reference on a native node and should be {@link #close() closed} once it is no longer
+ * needed. Releasing is done on the calling thread on purpose, because clingo does not count references atomically.
  */
-public abstract class Ast implements Comparable<Ast> {
+public abstract class Ast implements Comparable<Ast>, AutoCloseable {
 
     protected final Pointer ast;
 
+    private boolean released;
+
+    /**
+     * Adopts an existing reference on the given node. Callers that only borrow a node, such as callbacks receiving one,
+     * have to acquire a reference of their own beforehand.
+     */
     public Ast(Pointer ast) {
         this.ast = ast;
-        Clingo.INSTANCE.clingo_ast_acquire(ast);
     }
 
     @Override
@@ -151,10 +159,7 @@ public abstract class Ast implements Comparable<Ast> {
      */
     public List<Ast> unpool(UnpoolType unpoolType) {
         List<Ast> returnValues = new ArrayList<>();
-        AstCallback callback = (Ast ast) -> {
-            Clingo.INSTANCE.clingo_ast_acquire(ast.getPointer());
-            returnValues.add(ast);
-        };
+        AstCallback callback = returnValues::add;
         Clingo.check(Clingo.INSTANCE.clingo_ast_unpool(ast, unpoolType.getValue(), callback, null));
         return returnValues;
     }
@@ -249,11 +254,20 @@ public abstract class Ast implements Comparable<Ast> {
     }
 
     /**
-     * Decrement the reference count of an AST node.
-     * The node is deleted if the reference count reaches zero.
+     * Decrement the reference count of an AST node. The node is deleted if the reference count reaches zero. Repeated
+     * calls have no effect.
      */
     public void release() {
+        if (released) {
+            return;
+        }
+        released = true;
         Clingo.INSTANCE.clingo_ast_release(ast);
+    }
+
+    @Override
+    public void close() {
+        release();
     }
 
     /**
