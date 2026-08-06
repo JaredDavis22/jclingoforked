@@ -21,6 +21,7 @@ package org.potassco.clingo.solving;
 
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
+import org.potassco.clingo.internal.Clingo;
 
 /**
  * Callback to customize model printing.
@@ -47,8 +48,7 @@ public interface ModelPrinterCallback extends Callback {
      * @return whether the call was successful
      */
     default byte callback(Pointer model, DefaultModelPrinter printer, Pointer printerData, Pointer data) {
-        call(new Model(model));
-        return 1;
+        return Clingo.guard(() -> call(new Model(model)));
     }
 
     void call(Model model);

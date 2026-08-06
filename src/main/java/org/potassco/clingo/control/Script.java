@@ -142,9 +142,8 @@ public class Script extends Structure {
          * @param data     user data as given when registering the script
          * @return whether the function call was successful
          */
-        default boolean callback(Pointer location, String code, Pointer data) {
-            call(new Location(location), code);
-            return true;
+        default byte callback(Pointer location, String code, Pointer data) {
+            return Clingo.guard(() -> call(new Location(location), code));
         }
 
         void call(Location location, String code);
@@ -164,9 +163,8 @@ public class Script extends Structure {
          * @param data               user data as given when registering the script
          * @return whether the function call was successful
          */
-        default boolean callback(Pointer location, String name, long[] arguments, NativeSize argumentsSize, Clingo.SymbolCallback symbolCallback, Pointer symbolCallbackData, Pointer data) {
-            call(new Location(location), name, arguments, symbolCallback);
-            return true;
+        default byte callback(Pointer location, String name, long[] arguments, NativeSize argumentsSize, Clingo.SymbolCallback symbolCallback, Pointer symbolCallbackData, Pointer data) {
+            return Clingo.guard(() -> call(new Location(location), name, arguments, symbolCallback));
         }
 
         void call(Location location, String name, long[] symbols, Clingo.SymbolCallback symbolCallback);
@@ -182,10 +180,8 @@ public class Script extends Structure {
          * @param data   user data as given when registering the script
          * @return whether the function call was successful
          */
-        default boolean callback(String name, ByteByReference result, Pointer data) {
-            boolean callable = call(name);
-            result.setValue((byte) (callable ? 1 : 0));
-            return true;
+        default byte callback(String name, ByteByReference result, Pointer data) {
+            return Clingo.guard(() -> result.setValue((byte) (call(name) ? 1 : 0)));
         }
 
         boolean call(String name);
@@ -200,9 +196,8 @@ public class Script extends Structure {
          * @param data    user data as given when registering the script
          * @return whether the function call was successful
          */
-        default boolean callback(Pointer control, Pointer data) {
-            call(new Control(control));
-            return true;
+        default byte callback(Pointer control, Pointer data) {
+            return Clingo.guard(() -> call(new Control(control)));
         }
 
         void call(Control control);

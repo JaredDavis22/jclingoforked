@@ -35,8 +35,11 @@ public enum ErrorCode {
 	    }
 	}
 
+	/**
+	 * Maps a native error code, falling back to {@link #UNKNOWN} for codes this binding does not know.
+	 */
 	public static ErrorCode fromValue(int code) {
-		return mapping.get(code);
+		return mapping.getOrDefault(code, UNKNOWN);
 	}
 
     private final int code;

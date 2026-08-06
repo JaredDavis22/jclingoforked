@@ -1,7 +1,23 @@
 package org.potassco.clingo.internal;
 
+import org.potassco.clingo.control.ErrorCode;
+
+/**
+ * Thrown when a clingo API call reports failure.
+ */
 public class ClingoRuntimeException extends RuntimeException {
-    public ClingoRuntimeException(String message) {
-        super(message);
+
+    private final ErrorCode errorCode;
+
+    public ClingoRuntimeException(ErrorCode errorCode, String message) {
+        super(String.format("[%s] %s", errorCode.name(), message));
+        this.errorCode = errorCode;
+    }
+
+    /**
+     * @return the code clingo reported, {@link ErrorCode#UNKNOWN} if it reported one this binding does not know
+     */
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
 }
