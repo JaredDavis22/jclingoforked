@@ -41,48 +41,48 @@ public class Minimize extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getWeight() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.WEIGHT.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.WEIGHT.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public Ast getPriority() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.PRIORITY.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.PRIORITY.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public AstSequence getTerms() {
-        return new AstSequence(ast, AstAttribute.TERMS);
+        return new AstSequence(this, AstAttribute.TERMS);
     }
 
     public AstSequence getBody() {
-        return new AstSequence(ast, AstAttribute.BODY);
+        return new AstSequence(this, AstAttribute.BODY);
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setWeight(Ast weight) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.WEIGHT.getValue(), weight.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.WEIGHT.getValue(), weight.getPointer()));
     }
 
     public void setPriority(Ast priority) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.PRIORITY.getValue(), priority.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.PRIORITY.getValue(), priority.getPointer()));
     }
 
     public void setTerms(AstSequence terms) {
-        new AstSequence(ast, AstAttribute.TERMS).set(terms);
+        new AstSequence(this, AstAttribute.TERMS).set(terms);
     }
 
     public void setBody(AstSequence body) {
-        new AstSequence(ast, AstAttribute.BODY).set(body);
+        new AstSequence(this, AstAttribute.BODY).set(body);
     }
 
     private static Pointer create(Location location, Ast weight, Ast priority, AstSequence terms, AstSequence body) {

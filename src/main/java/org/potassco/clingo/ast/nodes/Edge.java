@@ -41,40 +41,40 @@ public class Edge extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getNodeU() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.NODE_U.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.NODE_U.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public Ast getNodeV() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.NODE_V.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.NODE_V.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public AstSequence getBody() {
-        return new AstSequence(ast, AstAttribute.BODY);
+        return new AstSequence(this, AstAttribute.BODY);
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setNodeU(Ast nodeU) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.NODE_U.getValue(), nodeU.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.NODE_U.getValue(), nodeU.getPointer()));
     }
 
     public void setNodeV(Ast nodeV) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.NODE_V.getValue(), nodeV.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.NODE_V.getValue(), nodeV.getPointer()));
     }
 
     public void setBody(AstSequence body) {
-        new AstSequence(ast, AstAttribute.BODY).set(body);
+        new AstSequence(this, AstAttribute.BODY).set(body);
     }
 
     private static Pointer create(Location location, Ast nodeU, Ast nodeV, AstSequence body) {

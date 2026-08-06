@@ -39,32 +39,32 @@ public class Interval extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getLeft() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.LEFT.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.LEFT.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public Ast getRight() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.RIGHT.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.RIGHT.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setLeft(Ast left) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.LEFT.getValue(), left.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.LEFT.getValue(), left.getPointer()));
     }
 
     public void setRight(Ast right) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.RIGHT.getValue(), right.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.RIGHT.getValue(), right.getPointer()));
     }
 
     private static Pointer create(Location location, Ast left, Ast right) {

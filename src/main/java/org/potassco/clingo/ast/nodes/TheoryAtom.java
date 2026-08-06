@@ -43,18 +43,18 @@ public class TheoryAtom extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getTerm() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.TERM.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public AstSequence getElements() {
-        return new AstSequence(ast, AstAttribute.ELEMENTS);
+        return new AstSequence(this, AstAttribute.ELEMENTS);
     }
 
     public boolean hasGuard() {
@@ -66,19 +66,19 @@ public class TheoryAtom extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setTerm(Ast term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.getValue(), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.TERM.getValue(), term.getPointer()));
     }
 
     public void setElements(AstSequence elements) {
-        new AstSequence(ast, AstAttribute.ELEMENTS).set(elements);
+        new AstSequence(this, AstAttribute.ELEMENTS).set(elements);
     }
 
     public void setGuard(Ast guard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.GUARD.getValue(), guard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(getPointer(), AstAttribute.GUARD.getValue(), guard.getPointer()));
     }
 
     private static Pointer create(Location location, Ast term, AstSequence elements, Ast guard) {

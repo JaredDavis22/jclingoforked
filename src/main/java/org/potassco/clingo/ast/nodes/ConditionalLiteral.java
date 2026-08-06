@@ -41,30 +41,30 @@ public class ConditionalLiteral extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getLiteral() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.LITERAL.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.LITERAL.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public AstSequence getCondition() {
-        return new AstSequence(ast, AstAttribute.CONDITION);
+        return new AstSequence(this, AstAttribute.CONDITION);
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setLiteral(Ast literal) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.LITERAL.getValue(), literal.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.LITERAL.getValue(), literal.getPointer()));
     }
 
     public void setCondition(AstSequence condition) {
-        new AstSequence(ast, AstAttribute.CONDITION).set(condition);
+        new AstSequence(this, AstAttribute.CONDITION).set(condition);
     }
 
     private static Pointer create(Location location, Ast literal, AstSequence condition) {

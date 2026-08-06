@@ -41,22 +41,22 @@ public class SymbolicTerm extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Symbol getSymbol() {
         LongByReference longByReference = new LongByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_symbol(ast, AstAttribute.SYMBOL.getValue(), longByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_symbol(getPointer(), AstAttribute.SYMBOL.getValue(), longByReference));
         return Symbol.fromLong(longByReference.getValue());
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setSymbol(Symbol symbol) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_symbol(ast, AstAttribute.SYMBOL.getValue(), symbol.getLong()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_symbol(getPointer(), AstAttribute.SYMBOL.getValue(), symbol.getLong()));
     }
 
     private static Pointer create(Location location, Symbol symbol) {

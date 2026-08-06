@@ -22,32 +22,32 @@ public class Comment extends Ast {
 
 	public Location getLocation() {
 		Location.ByReference locationByReference = new Location.ByReference();
-		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
 		return locationByReference;
 	}
 
 	public String getValue() {
 		String[] stringByRef = new String[1];
-		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.VALUE.getValue(), stringByRef));
+		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(getPointer(), AstAttribute.VALUE.getValue(), stringByRef));
 		return stringByRef[0];
 	}
 
 	public CommentType getCommentType() {
 		IntByReference intByReference = new IntByReference();
-		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.COMMENT_TYPE.getValue(), intByReference));
+		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(getPointer(), AstAttribute.COMMENT_TYPE.getValue(), intByReference));
 		return CommentType.fromValue(intByReference.getValue());
 	}
 
 	public void setLocation(Location location) {
-		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
 	}
 
 	public void setValue(String value) {
-		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.VALUE.getValue(), value));
+		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(getPointer(), AstAttribute.VALUE.getValue(), value));
 	}
 
 	public void setCommentType(CommentType commentType) {
-		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.COMMENT_TYPE.getValue(), commentType.getValue()));
+		Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(getPointer(), AstAttribute.COMMENT_TYPE.getValue(), commentType.getValue()));
 	}
 
 	private static Pointer create(Location location, String value, int commentType) {

@@ -41,20 +41,20 @@ public class Pool extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public AstSequence getArguments() {
-        return new AstSequence(ast, AstAttribute.ARGUMENTS);
+        return new AstSequence(this, AstAttribute.ARGUMENTS);
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setArguments(AstSequence arguments) {
-        new AstSequence(ast, AstAttribute.ARGUMENTS).set(arguments);
+        new AstSequence(this, AstAttribute.ARGUMENTS).set(arguments);
     }
 
     private static Pointer create(Location location, AstSequence arguments) {

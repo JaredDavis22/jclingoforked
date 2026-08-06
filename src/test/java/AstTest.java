@@ -10,11 +10,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.potassco.clingo.ast.Ast;
+import org.potassco.clingo.ast.AstList;
+import org.potassco.clingo.ast.AstScope;
 import org.potassco.clingo.ast.AstSequence;
 import org.potassco.clingo.ast.AstType;
 import org.potassco.clingo.ast.Location;
@@ -81,25 +84,28 @@ public class AstTest {
     }
 
     private void testString(String term, String alternative) throws InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchMethodException {
-        List<Ast> asts = Ast.parseString(term, this::logger, 100);
+        String copyTerm;
+        try (AstList asts = Ast.parseString(term, this::logger, 100); AstScope scope = new AstScope()) {
+            Ast node = asts.get(asts.size() - 1);
+            Ast rebuilt = scope.add(deepCopy(node));
+            Ast copy = scope.add(scope.add(rebuilt.deepCopy()).copy());
+            copyTerm = copy.toString();
+            Assert.assertEquals(alternative, copyTerm);
+        }
 
-        Ast node = asts.get(asts.size() - 1);
-        Ast copy = deepCopy(node).deepCopy().copy();
-        String copyTerm = copy.toString();
-        Assert.assertEquals(alternative, copyTerm);
+        try (AstList asts = Ast.parseString(copyTerm, this::logger, 100)) {
+            Ast copy2 = asts.get(asts.size() - 1);
+            Assert.assertEquals(alternative, copy2.toString());
 
-        asts = Ast.parseString(copyTerm, this::logger, 100);
-        Ast copy2 = asts.get(asts.size() - 1);
-        Assert.assertEquals(alternative, copy2.toString());
-
-        try (Control control = new Control(); ProgramBuilder builder = new ProgramBuilder(control)) {
-            try {
-                builder.add(copy2);
-            } catch (Exception e) {
-                String message = e.getMessage();
-                if (!message.contains("error: python support not available") ||
-                        message.contains("error: lua support not available"))
-                    throw e;
+            try (Control control = new Control(); ProgramBuilder builder = new ProgramBuilder(control)) {
+                try {
+                    builder.add(copy2);
+                } catch (Exception e) {
+                    String message = e.getMessage();
+                    if (!message.contains("error: python support not available") ||
+                            message.contains("error: lua support not available"))
+                        throw e;
+                }
             }
         }
     }
@@ -310,87 +316,97 @@ public class AstTest {
     public void testCompare() {
         Location location = new Location("<string>", "<string>", 1, 1, 1, 1);
         Location location2 = new Location("<string>", "<string>", 1, 1, 1, 2);
-        Id x = new Id(location, "x");
-        Id y = new Id(location2, "x");
-        Id z = new Id(location, "z");
-        Assert.assertEquals(x, y);
-        Assert.assertEquals(x, x);
-        Assert.assertNotEquals(x, z);
-        Assert.assertTrue(x.compareTo(z) < 0);
-        Assert.assertTrue(x.compareTo(z) != 0);
-        Assert.assertTrue(z.compareTo(x) > 0);
-        Assert.assertTrue(y.compareTo(x) <= 0);
-        Assert.assertTrue(x.compareTo(y) <= 0);
-        Assert.assertTrue(y.compareTo(x) >= 0);
-        Assert.assertTrue(x.compareTo(y) >= 0);
+        try (AstScope scope = new AstScope()) {
+            Id x = scope.add(new Id(location, "x"));
+            Id y = scope.add(new Id(location2, "x"));
+            Id z = scope.add(new Id(location, "z"));
+            Assert.assertEquals(x, y);
+            Assert.assertEquals(x, x);
+            Assert.assertNotEquals(x, z);
+            Assert.assertTrue(x.compareTo(z) < 0);
+            Assert.assertTrue(x.compareTo(z) != 0);
+            Assert.assertTrue(z.compareTo(x) > 0);
+            Assert.assertTrue(y.compareTo(x) <= 0);
+            Assert.assertTrue(x.compareTo(y) <= 0);
+            Assert.assertTrue(y.compareTo(x) >= 0);
+            Assert.assertTrue(x.compareTo(y) >= 0);
+        }
     }
 
     @Test
     public void testAstSequence() {
         Location location = new Location("<string>", "<string>", 1, 1, 1, 1);
-        Ast[] astArray = new Ast[]{new Id(location, "x"), new Id(location, "y"), new Id(location, "z")};
-        Program program = new Program(location, "p", astArray);
-        AstSequence parameters = program.getParameters();
-        Assert.assertEquals(3, parameters.size());
-        Assert.assertArrayEquals(astArray, parameters.get());
-        Assert.assertEquals(astArray[0], parameters.get(0));
+        try (AstScope scope = new AstScope()) {
+            Function<String, Id> id = name -> scope.add(new Id(location, name));
+            Ast[] astArray = new Ast[]{id.apply("x"), id.apply("y"), id.apply("z")};
+            Program program = scope.add(new Program(location, "p", astArray));
+            AstSequence parameters = program.getParameters();
+            Assert.assertEquals(3, parameters.size());
+            Assert.assertArrayEquals(astArray, parameters.get());
+            Assert.assertEquals(astArray[0], parameters.get(0));
 
-        parameters.insert(0, new Id(location, "i"));
-        Assert.assertArrayEquals(new Ast[]{new Id(location, "i"), new Id(location, "x"), new Id(location, "y"), new Id(location, "z")}, parameters.get());
+            parameters.insert(0, id.apply("i"));
+            Assert.assertArrayEquals(new Ast[]{id.apply("i"), id.apply("x"), id.apply("y"), id.apply("z")}, parameters.get());
 
-        parameters.insert(0, parameters.get(3));
-        Assert.assertArrayEquals(new Ast[]{new Id(location, "z"), new Id(location, "i"), new Id(location, "x"), new Id(location, "y"), new Id(location, "z")}, parameters.get());
+            parameters.insert(0, parameters.get(3));
+            Assert.assertArrayEquals(new Ast[]{id.apply("z"), id.apply("i"), id.apply("x"), id.apply("y"), id.apply("z")}, parameters.get());
 
-        parameters.delete(2);
-        Assert.assertArrayEquals(new Ast[]{new Id(location, "z"), new Id(location, "i"), new Id(location, "y"), new Id(location, "z")}, parameters.get());
+            parameters.delete(2);
+            Assert.assertArrayEquals(new Ast[]{id.apply("z"), id.apply("i"), id.apply("y"), id.apply("z")}, parameters.get());
+        }
     }
 
     @Test
     public void testAstSequence2() {
         String term = "a :- a; b.";
-        List<Ast> asts = Ast.parseString(term);
-        Rule rule = (Rule) asts.get(asts.size() - 1);
-        rule.setBody(rule.getBody());
-        Assert.assertEquals(term, rule.toString());
+        try (AstList asts = Ast.parseString(term)) {
+            Rule rule = (Rule) asts.get(asts.size() - 1);
+            rule.setBody(rule.getBody());
+            Assert.assertEquals(term, rule.toString());
+        }
     }
 
     @Test
     public void testStringSequence() {
         String[] sequence = new String[]{"x", "y", "z"};
         Location location = new Location("<string>", "<string>", 1, 1, 1, 1);
-        SymbolicTerm symbolicTerm = new SymbolicTerm(location, new org.potassco.clingo.symbol.Function("a", new org.potassco.clingo.symbol.Number(1)));
-        TheoryUnparsedTermElement unparsedTermElement = new TheoryUnparsedTermElement(sequence, symbolicTerm);
-        StringSequence operators = unparsedTermElement.getOperators();
-        Assert.assertEquals(3, operators.size());
-        Assert.assertArrayEquals(sequence, operators.get());
-        Assert.assertEquals(sequence[0], operators.get(0));
+        try (AstScope scope = new AstScope()) {
+            SymbolicTerm symbolicTerm = scope.add(new SymbolicTerm(location, new org.potassco.clingo.symbol.Function("a", new org.potassco.clingo.symbol.Number(1))));
+            TheoryUnparsedTermElement unparsedTermElement = scope.add(new TheoryUnparsedTermElement(sequence, symbolicTerm));
+            StringSequence operators = unparsedTermElement.getOperators();
+            Assert.assertEquals(3, operators.size());
+            Assert.assertArrayEquals(sequence, operators.get());
+            Assert.assertEquals(sequence[0], operators.get(0));
 
-        operators.insert(0, "i");
-        Assert.assertArrayEquals(new String[]{"i", "x", "y", "z"}, operators.get());
-        operators.insert(0, operators.get(3));
-        Assert.assertArrayEquals(new String[]{"z", "i", "x", "y", "z"}, operators.get());
-        operators.delete(2);
-        Assert.assertArrayEquals(new String[]{"z", "i", "y", "z"}, operators.get());
+            operators.insert(0, "i");
+            Assert.assertArrayEquals(new String[]{"i", "x", "y", "z"}, operators.get());
+            operators.insert(0, operators.get(3));
+            Assert.assertArrayEquals(new String[]{"z", "i", "x", "y", "z"}, operators.get());
+            operators.delete(2);
+            Assert.assertArrayEquals(new String[]{"z", "i", "y", "z"}, operators.get());
+        }
     }
 
     @Test
     public void testUnpool() {
-        List<Ast> program = Ast.parseString("%comment\n:- a(1;2): a(3;4).");
-        Assert.assertEquals(3, program.size());
+        try (AstList program = Ast.parseString("%comment\n:- a(1;2): a(3;4).")) {
+            Assert.assertEquals(3, program.size());
 
-        Comment com = ((Comment) program.get(program.size() - 2));
-        List<String> unpooled = com.unpool(UnpoolType.ALL).stream().map(Ast::toString).collect(Collectors.toList());
-        Assert.assertEquals(List.of("%comment"), unpooled);
+            Comment com = ((Comment) program.get(program.size() - 2));
+            Assert.assertEquals(List.of("%comment"), unpool(com, UnpoolType.ALL));
 
-        Ast lit = ((Rule) program.get(program.size()-1)).getBody().get(0);
-        unpooled = lit.unpool(UnpoolType.ALL).stream().map(Ast::toString).collect(Collectors.toList());
-        Assert.assertEquals(List.of("a(1): a(3)", "a(1): a(4)", "a(2): a(3)", "a(2): a(4)"), unpooled);
+            Ast lit = ((Rule) program.get(program.size() - 1)).getBody().get(0);
+            Assert.assertEquals(List.of("a(1): a(3)", "a(1): a(4)", "a(2): a(3)", "a(2): a(4)"),
+                    unpool(lit, UnpoolType.ALL));
+            Assert.assertEquals(List.of("a(1;2): a(3)", "a(1;2): a(4)"), unpool(lit, UnpoolType.CONDITION));
+            Assert.assertEquals(List.of("a(1): a(3;4)", "a(2): a(3;4)"), unpool(lit, UnpoolType.OTHER));
+        }
+    }
 
-        unpooled = lit.unpool(UnpoolType.CONDITION).stream().map(Ast::toString).collect(Collectors.toList());
-        Assert.assertEquals(List.of("a(1;2): a(3)", "a(1;2): a(4)"), unpooled);
-
-        unpooled = lit.unpool(UnpoolType.OTHER).stream().map(Ast::toString).collect(Collectors.toList());
-        Assert.assertEquals(List.of("a(1): a(3;4)", "a(2): a(3;4)"), unpooled);
+    private List<String> unpool(Ast node, UnpoolType unpoolType) {
+        try (AstList unpooled = node.unpool(unpoolType)) {
+            return unpooled.stream().map(Ast::toString).collect(Collectors.toList());
+        }
     }
 
     @Test
@@ -435,15 +451,17 @@ public class AstTest {
 
     @Test
     public void testTransformer() {
-        Transformer transformer = new Transformer() {
-            @Override
-            public Variable visit(Variable variable) {
-                return new Variable(variable.getLocation(), "_" + variable.getName());
-            }
-        };
-        List<Ast> program = new ArrayList<>();
-        Ast.parseString("p(X) :- q(X).", ast -> program.add(transformer.visit(ast)));
-        Assert.assertEquals("p(_X) :- q(_X).", program.get(program.size() - 1).toString());
+        try (AstScope scope = new AstScope()) {
+            Transformer transformer = new Transformer() {
+                @Override
+                public Variable visit(Variable variable) {
+                    return scope.add(new Variable(variable.getLocation(), "_" + variable.getName()));
+                }
+            };
+            List<Ast> program = new ArrayList<>();
+            Ast.parseString("p(X) :- q(X).", ast -> program.add(scope.add(transformer.visit(ast).retain())));
+            Assert.assertEquals("p(_X) :- q(_X).", program.get(program.size() - 1).toString());
+        }
     }
 
     /**
@@ -452,10 +470,11 @@ public class AstTest {
      */
     @Test
     public void testTransformerOptionalAttributes() {
+        AstScope scope = new AstScope();
         Transformer transformer = new Transformer() {
             @Override
             public Variable visit(Variable variable) {
-                return new Variable(variable.getLocation(), "_" + variable.getName());
+                return scope.add(new Variable(variable.getLocation(), "_" + variable.getName()));
             }
         };
         String program = "% comment\n" +
@@ -478,22 +497,69 @@ public class AstTest {
                 ),
                 transformed
         );
+        scope.close();
     }
 
     /**
-     * Nodes handed out by the binding own a reference of their own, so a child stays usable after its parent was
-     * released, and releasing twice is harmless.
+     * Parsed statements are owned, whereas nodes read from them are borrowed and need no closing. Retaining a borrowed
+     * node keeps it alive on its own.
      */
     @Test
     public void testNodeLifetime() {
+        Ast rule;
         Ast body;
-        List<Ast> program = Ast.parseString("a :- b.");
-        try (Ast rule = program.get(program.size() - 1)) {
+        try (AstList program = Ast.parseString("a :- b.")) {
+            rule = program.get(program.size() - 1);
+            Assert.assertTrue(rule.isOwned());
+
             body = ((Rule) rule).getBody().get(0);
+            Assert.assertFalse(body.isOwned());
+
+            // closing a borrowed node is a no-op, so try with resources around a traversal cannot break anything
+            body.close();
+            Assert.assertEquals("b", body.toString());
+
+            Assert.assertSame(body, body.retain());
+            Assert.assertTrue(body.isOwned());
         }
+
         Assert.assertEquals("b", body.toString());
         body.close();
         body.close();
+    }
+
+    /**
+     * Once a node was released, further use is a programming error and has to be reported as such instead of reaching
+     * into freed memory.
+     */
+    @Test
+    public void testUseAfterRelease() {
+        Ast rule;
+        try (AstList program = Ast.parseString("a :- b.")) {
+            rule = program.get(program.size() - 1);
+        }
+        Assert.assertThrows(IllegalStateException.class, rule::toString);
+        Assert.assertThrows(IllegalStateException.class, rule::getType);
+        Assert.assertThrows(IllegalStateException.class, rule::getPointer);
+        Assert.assertThrows(IllegalStateException.class, rule::retain);
+    }
+
+    /**
+     * A scope releases what was registered with it, no matter in which order the nodes were built.
+     */
+    @Test
+    public void testAstScope() {
+        Location location = new Location("<string>", "<string>", 1, 1, 1, 1);
+        Id id;
+        Program program;
+        try (AstScope scope = new AstScope()) {
+            id = scope.add(new Id(location, "x"));
+            program = scope.add(new Program(location, "p", new Ast[]{id}));
+            Assert.assertEquals("#program p(x).", program.toString());
+            scope.close();
+            Assert.assertThrows(IllegalStateException.class, program::toString);
+        }
+        Assert.assertThrows(IllegalStateException.class, id::toString);
     }
 
     @Test
@@ -501,8 +567,10 @@ public class AstTest {
         Path file = Files.createTempFile("jclingo", ".lp");
         try {
             Files.writeString(file, "a. b :- a.");
-            List<String> statements = Ast.parseFiles(file).stream().map(Ast::toString).collect(Collectors.toList());
-            Assert.assertEquals(List.of("#program base.", "a.", "b :- a."), statements);
+            try (AstList asts = Ast.parseFiles(file)) {
+                List<String> statements = asts.stream().map(Ast::toString).collect(Collectors.toList());
+                Assert.assertEquals(List.of("#program base.", "a.", "b :- a."), statements);
+            }
         }
         finally {
             Files.deleteIfExists(file);

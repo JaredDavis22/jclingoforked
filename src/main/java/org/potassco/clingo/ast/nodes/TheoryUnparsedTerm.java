@@ -41,20 +41,20 @@ public class TheoryUnparsedTerm extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public AstSequence getElements() {
-        return new AstSequence(ast, AstAttribute.ELEMENTS);
+        return new AstSequence(this, AstAttribute.ELEMENTS);
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setElements(AstSequence elements) {
-        new AstSequence(ast, AstAttribute.ELEMENTS).set(elements);
+        new AstSequence(this, AstAttribute.ELEMENTS).set(elements);
     }
 
     private static Pointer create(Location location, AstSequence elements) {

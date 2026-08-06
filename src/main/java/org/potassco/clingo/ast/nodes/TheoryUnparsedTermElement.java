@@ -43,21 +43,21 @@ public class TheoryUnparsedTermElement extends Ast {
     }
 
     public StringSequence getOperators() {
-        return new StringSequence(ast, AstAttribute.OPERATORS);
+        return new StringSequence(this, AstAttribute.OPERATORS);
     }
 
     public Ast getTerm() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.getValue(), pointerByReference));
-        return Ast.create(pointerByReference.getValue());
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(getPointer(), AstAttribute.TERM.getValue(), pointerByReference));
+        return Ast.borrowChild(pointerByReference.getValue());
     }
 
     public void setOperators(StringSequence operators) {
-        new StringSequence(ast, AstAttribute.OPERATORS).set(operators);
+        new StringSequence(this, AstAttribute.OPERATORS).set(operators);
     }
 
     public void setTerm(Ast term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.getValue(), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(getPointer(), AstAttribute.TERM.getValue(), term.getPointer()));
     }
 
     private static Pointer create(String[] operators, Ast term) {

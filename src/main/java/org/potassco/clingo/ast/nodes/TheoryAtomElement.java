@@ -39,19 +39,19 @@ public class TheoryAtomElement extends Ast {
     }
 
     public AstSequence getTerms() {
-        return new AstSequence(ast, AstAttribute.TERMS);
+        return new AstSequence(this, AstAttribute.TERMS);
     }
 
     public AstSequence getCondition() {
-        return new AstSequence(ast, AstAttribute.CONDITION);
+        return new AstSequence(this, AstAttribute.CONDITION);
     }
 
     public void setTerms(AstSequence terms) {
-        new AstSequence(ast, AstAttribute.TERMS).set(terms);
+        new AstSequence(this, AstAttribute.TERMS).set(terms);
     }
 
     public void setCondition(AstSequence condition) {
-        new AstSequence(ast, AstAttribute.CONDITION).set(condition);
+        new AstSequence(this, AstAttribute.CONDITION).set(condition);
     }
 
     private static Pointer create(AstSequence terms, AstSequence condition) {

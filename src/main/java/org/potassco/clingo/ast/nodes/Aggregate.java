@@ -43,7 +43,7 @@ public class Aggregate extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
@@ -56,7 +56,7 @@ public class Aggregate extends Ast {
     }
 
     public AstSequence getElements() {
-        return new AstSequence(ast, AstAttribute.ELEMENTS);
+        return new AstSequence(this, AstAttribute.ELEMENTS);
     }
 
     public boolean hasRightGuard() {
@@ -68,19 +68,19 @@ public class Aggregate extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setLeftGuard(Ast leftGuard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.LEFT_GUARD.getValue(), leftGuard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(getPointer(), AstAttribute.LEFT_GUARD.getValue(), leftGuard.getPointer()));
     }
 
     public void setElements(AstSequence elements) {
-        new AstSequence(ast, AstAttribute.ELEMENTS).set(elements);
+        new AstSequence(this, AstAttribute.ELEMENTS).set(elements);
     }
 
     public void setRightGuard(Ast rightGuard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.RIGHT_GUARD.getValue(), rightGuard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(getPointer(), AstAttribute.RIGHT_GUARD.getValue(), rightGuard.getPointer()));
     }
 
     private static Pointer create(Location location, Ast leftGuard, AstSequence elements, Ast rightGuard) {

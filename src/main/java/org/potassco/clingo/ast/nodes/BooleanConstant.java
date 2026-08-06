@@ -39,12 +39,12 @@ public class BooleanConstant extends Ast {
 
     public int getValue() {
         IntByReference intByReference = new IntByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.VALUE.getValue(), intByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(getPointer(), AstAttribute.VALUE.getValue(), intByReference));
         return intByReference.getValue();
     }
 
     public void setValue(int value) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.VALUE.getValue(), value));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(getPointer(), AstAttribute.VALUE.getValue(), value));
     }
 
     private static Pointer create(int value) {

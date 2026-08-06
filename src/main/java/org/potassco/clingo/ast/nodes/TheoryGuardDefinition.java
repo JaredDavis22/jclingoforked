@@ -39,21 +39,21 @@ public class TheoryGuardDefinition extends Ast {
     }
 
     public StringSequence getOperators() {
-        return new StringSequence(ast, AstAttribute.OPERATORS);
+        return new StringSequence(this, AstAttribute.OPERATORS);
     }
 
     public String getTerm() {
         String[] stringByReference = new String[1];
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.TERM.getValue(), stringByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(getPointer(), AstAttribute.TERM.getValue(), stringByReference));
         return stringByReference[0];
     }
 
     public void setOperators(StringSequence operators) {
-        new StringSequence(ast, AstAttribute.OPERATORS).set(operators);
+        new StringSequence(this, AstAttribute.OPERATORS).set(operators);
     }
 
     public void setTerm(String term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.TERM.getValue(), term));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(getPointer(), AstAttribute.TERM.getValue(), term));
     }
 
     private static Pointer create(StringSequence operators, String term) {

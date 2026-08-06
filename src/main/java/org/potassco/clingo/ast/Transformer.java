@@ -74,6 +74,9 @@ import org.potassco.clingo.ast.nodes.Variable;
  * modify. Such a function should return an updated AST or the same AST if no
  * change is necessary. Parent ASTs are updated in place, so a transformer modifies the tree it is applied to. Note that
  * the class works like a visitor if only self references are returned from such functions.
+ * <p>
+ * The nodes passed to such a function are borrowed, whereas a node newly built inside it is owned by the transformer
+ * and still has to be released after the tree was updated. An {@link AstScope} collects those nodes.
  */
 public class Transformer {
 

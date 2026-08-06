@@ -42,30 +42,30 @@ public class TheorySequence extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public int getSequenceType() {
         IntByReference intByReference = new IntByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.SEQUENCE_TYPE.getValue(), intByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(getPointer(), AstAttribute.SEQUENCE_TYPE.getValue(), intByReference));
         return intByReference.getValue();
     }
 
     public AstSequence getTerms() {
-        return new AstSequence(ast, AstAttribute.TERMS);
+        return new AstSequence(this, AstAttribute.TERMS);
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setSequenceType(int sequenceType) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.SEQUENCE_TYPE.getValue(), sequenceType));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(getPointer(), AstAttribute.SEQUENCE_TYPE.getValue(), sequenceType));
     }
 
     public void setTerms(AstSequence terms) {
-        new AstSequence(ast, AstAttribute.TERMS).set(terms);
+        new AstSequence(this, AstAttribute.TERMS).set(terms);
     }
 
     private static Pointer create(Location location, int sequenceType, AstSequence terms) {

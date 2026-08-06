@@ -44,7 +44,7 @@ public class BodyAggregate extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(getPointer(), AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
@@ -58,12 +58,12 @@ public class BodyAggregate extends Ast {
 
     public int getFunction() {
         IntByReference intByReference = new IntByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.FUNCTION.getValue(), intByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(getPointer(), AstAttribute.FUNCTION.getValue(), intByReference));
         return intByReference.getValue();
     }
 
     public AstSequence getElements() {
-        return new AstSequence(ast, AstAttribute.ELEMENTS);
+        return new AstSequence(this, AstAttribute.ELEMENTS);
     }
 
     public boolean hasRightGuard() {
@@ -75,23 +75,23 @@ public class BodyAggregate extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(getPointer(), AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setLeftGuard(Ast leftGuard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.LEFT_GUARD.getValue(), leftGuard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(getPointer(), AstAttribute.LEFT_GUARD.getValue(), leftGuard.getPointer()));
     }
 
     public void setFunction(int function) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.FUNCTION.getValue(), function));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(getPointer(), AstAttribute.FUNCTION.getValue(), function));
     }
 
     public void setElements(AstSequence elements) {
-        new AstSequence(ast, AstAttribute.ELEMENTS).set(elements);
+        new AstSequence(this, AstAttribute.ELEMENTS).set(elements);
     }
 
     public void setRightGuard(Ast rightGuard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.RIGHT_GUARD.getValue(), rightGuard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(getPointer(), AstAttribute.RIGHT_GUARD.getValue(), rightGuard.getPointer()));
     }
 
     private static Pointer create(Location location, Ast leftGuard, int function, AstSequence elements, Ast rightGuard) {

@@ -34,17 +34,14 @@ public interface AstCallback extends Callback {
      * @return whether the call was successful
      */
     default byte callback(Pointer ast, Pointer data) {
-        return Clingo.guard(() -> {
-            // clingo does not increment the reference count of a node it passes to a callback, so the wrapper has to
-            Clingo.INSTANCE.clingo_ast_acquire(ast);
-            call(Ast.create(ast));
-        });
+        return Clingo.guard(() -> call(Ast.borrow(ast)));
     }
 
     /**
      * Callback function to intercept AST nodes.
      *
-     * @param ast the AST
+     * @param ast the AST, borrowed for the duration of the call. Implementations that keep the node beyond that have to
+     *            {@link Ast#retain() retain} it and close it later on.
      */
     void call(Ast ast);
 
