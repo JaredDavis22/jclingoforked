@@ -49,7 +49,7 @@ public class AstSequence {
 
     public int size() {
         NativeSizeByReference nativeSizeByReference = new NativeSizeByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_size_ast_array(ast, attribute.ordinal(), nativeSizeByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_size_ast_array(ast, attribute.getValue(), nativeSizeByReference));
         return (int) nativeSizeByReference.getValue();
     }
 
@@ -64,20 +64,20 @@ public class AstSequence {
 
     public Ast get(int index) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast_at(ast, attribute.ordinal(), new NativeSize(index), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast_at(ast, attribute.getValue(), new NativeSize(index), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
     public void insert(int index, Ast ast) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_insert_ast_at(this.ast, attribute.ordinal(), new NativeSize(index), ast.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_insert_ast_at(this.ast, attribute.getValue(), new NativeSize(index), ast.getPointer()));
     }
 
     public void set(int index, Ast ast) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast_at(this.ast, attribute.ordinal(), new NativeSize(index), ast.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast_at(this.ast, attribute.getValue(), new NativeSize(index), ast.getPointer()));
     }
 
     public void delete(int index) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_delete_ast_at(ast, attribute.ordinal(), new NativeSize(index)));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_delete_ast_at(ast, attribute.getValue(), new NativeSize(index)));
     }
 
     public void set(AstSequence sequence) {
@@ -103,7 +103,7 @@ public class AstSequence {
         Pointer[] pointers = new Pointer[size];
         PointerByReference pointerByReference = new PointerByReference();
         for (int i = 0; i < size; i++) {
-            Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast_at(ast, attribute.ordinal(), new NativeSize(i), pointerByReference));
+            Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast_at(ast, attribute.getValue(), new NativeSize(i), pointerByReference));
             pointers[i] = pointerByReference.getValue();
         }
         return pointers;

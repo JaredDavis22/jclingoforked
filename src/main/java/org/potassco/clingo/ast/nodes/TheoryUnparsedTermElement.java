@@ -48,7 +48,7 @@ public class TheoryUnparsedTermElement extends Ast {
 
     public Ast getTerm() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
@@ -57,18 +57,18 @@ public class TheoryUnparsedTermElement extends Ast {
     }
 
     public void setTerm(Ast term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.ordinal(), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.getValue(), term.getPointer()));
     }
 
     private static Pointer create(String[] operators, Ast term) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_UNPARSED_TERM_ELEMENT.ordinal(), pointerByReference, operators, new NativeSize(operators.length), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_UNPARSED_TERM_ELEMENT.getValue(), pointerByReference, operators, new NativeSize(operators.length), term.getPointer()));
         return pointerByReference.getValue();
     }
 
     private static Pointer create(StringSequence operators, Ast term) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_UNPARSED_TERM_ELEMENT.ordinal(), pointerByReference, operators.get(), new NativeSize(operators.size()), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_UNPARSED_TERM_ELEMENT.getValue(), pointerByReference, operators.get(), new NativeSize(operators.size()), term.getPointer()));
         return pointerByReference.getValue();
     }
 

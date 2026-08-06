@@ -39,7 +39,7 @@ public class StringSequence {
 
     public int size() {
         NativeSizeByReference nativeSizeByReference = new NativeSizeByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_size_string_array(ast, attribute.ordinal(), nativeSizeByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_size_string_array(ast, attribute.getValue(), nativeSizeByReference));
         return (int) nativeSizeByReference.getValue();
     }
 
@@ -54,20 +54,20 @@ public class StringSequence {
 
     public String get(int index) {
         String[] stringByReference = new String[1];
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string_at(ast, attribute.ordinal(), new NativeSize(index), stringByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string_at(ast, attribute.getValue(), new NativeSize(index), stringByReference));
         return stringByReference[0];
     }
 
     public void insert(int index, String string) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_insert_string_at(this.ast, attribute.ordinal(), new NativeSize(index), string));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_insert_string_at(this.ast, attribute.getValue(), new NativeSize(index), string));
     }
 
     public void set(int index, String string) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string_at(this.ast, attribute.ordinal(), new NativeSize(index), string));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string_at(this.ast, attribute.getValue(), new NativeSize(index), string));
     }
 
     public void delete(int index) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_delete_string_at(ast, attribute.ordinal(), new NativeSize(index)));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_delete_string_at(ast, attribute.getValue(), new NativeSize(index)));
     }
 
     public void set(StringSequence sequence) {

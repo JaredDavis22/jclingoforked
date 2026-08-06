@@ -44,7 +44,7 @@ public class TheoryGuardDefinition extends Ast {
 
     public String getTerm() {
         String[] stringByReference = new String[1];
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.TERM.ordinal(), stringByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.TERM.getValue(), stringByReference));
         return stringByReference[0];
     }
 
@@ -53,12 +53,12 @@ public class TheoryGuardDefinition extends Ast {
     }
 
     public void setTerm(String term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.TERM.ordinal(), term));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.TERM.getValue(), term));
     }
 
     private static Pointer create(StringSequence operators, String term) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_GUARD_DEFINITION.ordinal(), pointerByReference, operators.get(), new NativeSize(operators.size()), term));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_GUARD_DEFINITION.getValue(), pointerByReference, operators.get(), new NativeSize(operators.size()), term));
         return pointerByReference.getValue();
     }
 

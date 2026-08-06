@@ -38,17 +38,17 @@ public class SymbolicAtom extends Ast {
 
     public Ast getSymbol() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.SYMBOL.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.SYMBOL.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
     public void setSymbol(Ast symbol) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.SYMBOL.ordinal(), symbol.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.SYMBOL.getValue(), symbol.getPointer()));
     }
 
     private static Pointer create(Ast symbol) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.SYMBOLIC_ATOM.ordinal(), pointerByReference, symbol.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.SYMBOLIC_ATOM.getValue(), pointerByReference, symbol.getPointer()));
         return pointerByReference.getValue();
     }
 

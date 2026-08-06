@@ -9,21 +9,31 @@ import java.util.Objects;
  */
 public enum CommentType {
 
-	LINE,
-	BLOCK;
+	LINE(0),
+	BLOCK(1);
 
 	private static final Map<Integer, CommentType> mapping = new HashMap<>();
 
 	static {
 		for (CommentType type : CommentType.values()) {
 			mapping.put(
-					type.ordinal(),
+					type.getValue(),
 					type
 			);
 		}
 	}
 
-	public static CommentType fromOrdinal(int type) {
-		return Objects.requireNonNull(mapping.get(type));
+	public static CommentType fromValue(int type) {
+		return Objects.requireNonNull(mapping.get(type), "unknown comment type " + type);
+	}
+
+	private final int type;
+
+	CommentType(int type) {
+		this.type = type;
+	}
+
+	public int getValue() {
+		return type;
 	}
 }

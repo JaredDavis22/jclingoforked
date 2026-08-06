@@ -41,13 +41,13 @@ public class TheoryDefinition extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public String getName() {
         String[] stringByReference = new String[1];
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.NAME.ordinal(), stringByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.NAME.getValue(), stringByReference));
         return stringByReference[0];
     }
 
@@ -60,11 +60,11 @@ public class TheoryDefinition extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setName(String name) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.NAME.ordinal(), name));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.NAME.getValue(), name));
     }
 
     public void setTerms(AstSequence terms) {
@@ -77,7 +77,7 @@ public class TheoryDefinition extends Ast {
 
     private static Pointer create(Location location, String name, AstSequence terms, AstSequence atoms) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_DEFINITION.ordinal(), pointerByReference, location, name, terms.getPointer(), new NativeSize(terms.size()), atoms.getPointer(), new NativeSize(atoms.size())));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_DEFINITION.getValue(), pointerByReference, location, name, terms.getPointer(), new NativeSize(terms.size()), atoms.getPointer(), new NativeSize(atoms.size())));
         return pointerByReference.getValue();
     }
 

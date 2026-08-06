@@ -44,7 +44,7 @@ public class BodyAggregate extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
@@ -58,7 +58,7 @@ public class BodyAggregate extends Ast {
 
     public int getFunction() {
         IntByReference intByReference = new IntByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.FUNCTION.ordinal(), intByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.FUNCTION.getValue(), intByReference));
         return intByReference.getValue();
     }
 
@@ -75,15 +75,15 @@ public class BodyAggregate extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setLeftGuard(Ast leftGuard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.LEFT_GUARD.ordinal(), leftGuard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.LEFT_GUARD.getValue(), leftGuard.getPointer()));
     }
 
     public void setFunction(int function) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.FUNCTION.ordinal(), function));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.FUNCTION.getValue(), function));
     }
 
     public void setElements(AstSequence elements) {
@@ -91,12 +91,12 @@ public class BodyAggregate extends Ast {
     }
 
     public void setRightGuard(Ast rightGuard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.RIGHT_GUARD.ordinal(), rightGuard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.RIGHT_GUARD.getValue(), rightGuard.getPointer()));
     }
 
     private static Pointer create(Location location, Ast leftGuard, int function, AstSequence elements, Ast rightGuard) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.BODY_AGGREGATE.ordinal(), pointerByReference, location, leftGuard.getPointer(), function, elements.getPointer(), new NativeSize(elements.size()), rightGuard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.BODY_AGGREGATE.getValue(), pointerByReference, location, leftGuard.getPointer(), function, elements.getPointer(), new NativeSize(elements.size()), rightGuard.getPointer()));
         return pointerByReference.getValue();
     }
 

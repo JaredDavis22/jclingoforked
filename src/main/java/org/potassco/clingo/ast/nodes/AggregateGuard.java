@@ -39,27 +39,27 @@ public class AggregateGuard extends Ast {
 
     public int getComparison() {
         IntByReference intByReference = new IntByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.COMPARISON.ordinal(), intByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.COMPARISON.getValue(), intByReference));
         return intByReference.getValue();
     }
 
     public Ast getTerm() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
     public void setComparison(int comparison) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.COMPARISON.ordinal(), comparison));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.COMPARISON.getValue(), comparison));
     }
 
     public void setTerm(Ast term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.ordinal(), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.getValue(), term.getPointer()));
     }
 
     private static Pointer create(int comparison, Ast term) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.AGGREGATE_GUARD.ordinal(), pointerByReference, comparison, term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.AGGREGATE_GUARD.getValue(), pointerByReference, comparison, term.getPointer()));
         return pointerByReference.getValue();
     }
 

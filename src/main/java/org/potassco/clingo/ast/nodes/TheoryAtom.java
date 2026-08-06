@@ -43,13 +43,13 @@ public class TheoryAtom extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getTerm() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
@@ -66,11 +66,11 @@ public class TheoryAtom extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setTerm(Ast term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.ordinal(), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.getValue(), term.getPointer()));
     }
 
     public void setElements(AstSequence elements) {
@@ -78,12 +78,12 @@ public class TheoryAtom extends Ast {
     }
 
     public void setGuard(Ast guard) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.GUARD.ordinal(), guard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_optional_ast(this.ast, AstAttribute.GUARD.getValue(), guard.getPointer()));
     }
 
     private static Pointer create(Location location, Ast term, AstSequence elements, Ast guard) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_ATOM.ordinal(), pointerByReference, location, term.getPointer(), elements.getPointer(), new NativeSize(elements.size()), guard.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_ATOM.getValue(), pointerByReference, location, term.getPointer(), elements.getPointer(), new NativeSize(elements.size()), guard.getPointer()));
         return pointerByReference.getValue();
     }
 

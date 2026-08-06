@@ -39,17 +39,17 @@ public class BooleanConstant extends Ast {
 
     public int getValue() {
         IntByReference intByReference = new IntByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.VALUE.ordinal(), intByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_number(ast, AstAttribute.VALUE.getValue(), intByReference));
         return intByReference.getValue();
     }
 
     public void setValue(int value) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.VALUE.ordinal(), value));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_number(ast, AstAttribute.VALUE.getValue(), value));
     }
 
     private static Pointer create(int value) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.BOOLEAN_CONSTANT.ordinal(), pointerByReference, value));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.BOOLEAN_CONSTANT.getValue(), pointerByReference, value));
         return pointerByReference.getValue();
     }
 

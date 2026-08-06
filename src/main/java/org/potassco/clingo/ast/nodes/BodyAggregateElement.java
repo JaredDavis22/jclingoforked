@@ -56,7 +56,7 @@ public class BodyAggregateElement extends Ast {
 
     private static Pointer create(AstSequence terms, AstSequence condition) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.BODY_AGGREGATE_ELEMENT.ordinal(), pointerByReference, terms.getPointer(), new NativeSize(terms.size()), condition.getPointer(), new NativeSize(condition.size())));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.BODY_AGGREGATE_ELEMENT.getValue(), pointerByReference, terms.getPointer(), new NativeSize(terms.size()), condition.getPointer(), new NativeSize(condition.size())));
         return pointerByReference.getValue();
     }
 

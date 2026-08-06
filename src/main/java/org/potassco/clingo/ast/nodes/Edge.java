@@ -41,19 +41,19 @@ public class Edge extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getNodeU() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.NODE_U.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.NODE_U.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
     public Ast getNodeV() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.NODE_V.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.NODE_V.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
@@ -62,15 +62,15 @@ public class Edge extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setNodeU(Ast nodeU) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.NODE_U.ordinal(), nodeU.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.NODE_U.getValue(), nodeU.getPointer()));
     }
 
     public void setNodeV(Ast nodeV) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.NODE_V.ordinal(), nodeV.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.NODE_V.getValue(), nodeV.getPointer()));
     }
 
     public void setBody(AstSequence body) {
@@ -79,7 +79,7 @@ public class Edge extends Ast {
 
     private static Pointer create(Location location, Ast nodeU, Ast nodeV, AstSequence body) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.EDGE.ordinal(), pointerByReference, location, nodeU.getPointer(), nodeV.getPointer(), body.getPointer(), new NativeSize(body.size())));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.EDGE.getValue(), pointerByReference, location, nodeU.getPointer(), nodeV.getPointer(), body.getPointer(), new NativeSize(body.size())));
         return pointerByReference.getValue();
     }
 

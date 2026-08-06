@@ -38,27 +38,27 @@ public class TheoryGuard extends Ast {
 
     public String getOperatorName() {
         String[] stringByReference = new String[1];
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.OPERATOR_NAME.ordinal(), stringByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.OPERATOR_NAME.getValue(), stringByReference));
         return stringByReference[0];
     }
 
     public Ast getTerm() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.TERM.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
     public void setOperatorName(String operatorName) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.OPERATOR_NAME.ordinal(), operatorName));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.OPERATOR_NAME.getValue(), operatorName));
     }
 
     public void setTerm(Ast term) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.ordinal(), term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.TERM.getValue(), term.getPointer()));
     }
 
     private static Pointer create(String operatorName, Ast term) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_GUARD.ordinal(), pointerByReference, operatorName, term.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.THEORY_GUARD.getValue(), pointerByReference, operatorName, term.getPointer()));
         return pointerByReference.getValue();
     }
 

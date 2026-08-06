@@ -41,7 +41,7 @@ public class Disjunction extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
@@ -50,7 +50,7 @@ public class Disjunction extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setElements(AstSequence elements) {
@@ -59,7 +59,7 @@ public class Disjunction extends Ast {
 
     private static Pointer create(Location location, AstSequence elements) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.DISJUNCTION.ordinal(), pointerByReference, location, elements.getPointer(), new NativeSize(elements.size())));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.DISJUNCTION.getValue(), pointerByReference, location, elements.getPointer(), new NativeSize(elements.size())));
         return pointerByReference.getValue();
     }
 

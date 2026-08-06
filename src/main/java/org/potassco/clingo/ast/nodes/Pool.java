@@ -41,7 +41,7 @@ public class Pool extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
@@ -50,7 +50,7 @@ public class Pool extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setArguments(AstSequence arguments) {
@@ -59,7 +59,7 @@ public class Pool extends Ast {
 
     private static Pointer create(Location location, AstSequence arguments) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.POOL.ordinal(), pointerByReference, location, arguments.getPointer(), new NativeSize(arguments.size())));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.POOL.getValue(), pointerByReference, location, arguments.getPointer(), new NativeSize(arguments.size())));
         return pointerByReference.getValue();
     }
 

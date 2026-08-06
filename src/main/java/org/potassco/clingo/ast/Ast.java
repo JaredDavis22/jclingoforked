@@ -125,7 +125,7 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
     public AstType getType() {
         IntByReference intByReference = new IntByReference();
         Clingo.check(Clingo.INSTANCE.clingo_ast_get_type(ast, intByReference));
-        return AstType.fromOrdinal(intByReference.getValue());
+        return AstType.fromValue(intByReference.getValue());
     }
 
     /**
@@ -136,7 +136,7 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
      */
     public AttributeType getAttributeType(AstAttribute attribute) {
         IntByReference intByReference = new IntByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_type(ast, attribute.ordinal(), intByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_type(ast, attribute.getValue(), intByReference));
         return AttributeType.fromValue(intByReference.getValue());
     }
 
@@ -148,7 +148,7 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
      */
     public boolean hasAttribute(AstAttribute attribute) {
         ByteByReference byteByReference = new ByteByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_has_attribute(ast, attribute.ordinal(), byteByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_has_attribute(ast, attribute.getValue(), byteByReference));
         return byteByReference.getValue() > 0;
     }
 
@@ -160,7 +160,7 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
      */
     protected boolean hasOptionalAst(AstAttribute attribute) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, attribute.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, attribute.getValue(), pointerByReference));
         return pointerByReference.getValue() != null;
     }
 
@@ -173,7 +173,7 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
      */
     protected Ast getOptionalAst(AstAttribute attribute) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, attribute.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_optional_ast(ast, attribute.getValue(), pointerByReference));
         if (pointerByReference.getValue() == null) {
             throw new NoSuchElementException("there is no optional ast " + attribute);
         }
@@ -343,7 +343,7 @@ public abstract class Ast implements Comparable<Ast>, AutoCloseable {
     protected static Ast create(Pointer ast) {
         IntByReference intByReference = new IntByReference();
         Clingo.check(Clingo.INSTANCE.clingo_ast_get_type(ast, intByReference));
-        AstType type = AstType.fromOrdinal(intByReference.getValue());
+        AstType type = AstType.fromValue(intByReference.getValue());
         return create(ast, type);
     }
 

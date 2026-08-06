@@ -45,13 +45,13 @@ public class Program extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public String getName() {
         String[] stringByReference = new String[1];
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.NAME.ordinal(), stringByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_string(ast, AstAttribute.NAME.getValue(), stringByReference));
         return stringByReference[0];
     }
 
@@ -60,11 +60,11 @@ public class Program extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setName(String name) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.NAME.ordinal(), name));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_string(ast, AstAttribute.NAME.getValue(), name));
     }
 
     public void setParameters(AstSequence parameters) {
@@ -77,13 +77,13 @@ public class Program extends Ast {
             parameterPointers[i] = parameters[i].getPointer();
         }
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.PROGRAM.ordinal(), pointerByReference, location, name, parameterPointers, new NativeSize(parameters.length)));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.PROGRAM.getValue(), pointerByReference, location, name, parameterPointers, new NativeSize(parameters.length)));
         return pointerByReference.getValue();
     }
 
     private static Pointer create(Location location, String name, AstSequence parameters) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.PROGRAM.ordinal(), pointerByReference, location, name, parameters.getPointer(), new NativeSize(parameters.size())));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.PROGRAM.getValue(), pointerByReference, location, name, parameters.getPointer(), new NativeSize(parameters.size())));
         return pointerByReference.getValue();
     }
 

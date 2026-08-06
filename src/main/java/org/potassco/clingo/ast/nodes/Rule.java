@@ -41,13 +41,13 @@ public class Rule extends Ast {
 
     public Location getLocation() {
         Location.ByReference locationByReference = new Location.ByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.ordinal(), locationByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_location(ast, AstAttribute.LOCATION.getValue(), locationByReference));
         return locationByReference;
     }
 
     public Ast getHead() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.HEAD.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.HEAD.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
@@ -56,11 +56,11 @@ public class Rule extends Ast {
     }
 
     public void setLocation(Location location) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.ordinal(), location));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_location(ast, AstAttribute.LOCATION.getValue(), location));
     }
 
     public void setHead(Ast head) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.HEAD.ordinal(), head.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.HEAD.getValue(), head.getPointer()));
     }
 
     public void setBody(AstSequence body) {
@@ -69,7 +69,7 @@ public class Rule extends Ast {
 
     private static Pointer create(Location location, Ast head, AstSequence body) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.RULE.ordinal(), pointerByReference, location, head.getPointer(), body.getPointer(), new NativeSize(body.size())));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.RULE.getValue(), pointerByReference, location, head.getPointer(), body.getPointer(), new NativeSize(body.size())));
         return pointerByReference.getValue();
     }
 

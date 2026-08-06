@@ -44,7 +44,7 @@ public class HeadAggregateElement extends Ast {
 
     public Ast getCondition() {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.CONDITION.ordinal(), pointerByReference));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_get_ast(ast, AstAttribute.CONDITION.getValue(), pointerByReference));
         return Ast.create(pointerByReference.getValue());
     }
 
@@ -53,12 +53,12 @@ public class HeadAggregateElement extends Ast {
     }
 
     public void setCondition(Ast condition) {
-        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.CONDITION.ordinal(), condition.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_attribute_set_ast(ast, AstAttribute.CONDITION.getValue(), condition.getPointer()));
     }
 
     private static Pointer create(AstSequence terms, Ast condition) {
         PointerByReference pointerByReference = new PointerByReference();
-        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.HEAD_AGGREGATE_ELEMENT.ordinal(), pointerByReference, terms.getPointer(), new NativeSize(terms.size()), condition.getPointer()));
+        Clingo.check(Clingo.INSTANCE.clingo_ast_build(AstType.HEAD_AGGREGATE_ELEMENT.getValue(), pointerByReference, terms.getPointer(), new NativeSize(terms.size()), condition.getPointer()));
         return pointerByReference.getValue();
     }
 
