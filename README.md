@@ -56,9 +56,9 @@ public class Main {
 
 This repository provides out of the box support for the following platforms:
 
-- Linux: x86_64, arm64 (glibc)
-- MacOS: x86_64, arm64 (m-series)
-- Windows: x86_64, arm64
+- Linux: x86_64, arm64 (glibc 2.17 or newer)
+- MacOS: x86_64, arm64 (m-series), macOS 11 or newer
+- Windows: x86_64, arm64 (requires the Microsoft Visual C++ Redistributable)
 
 ## Setup Required
 

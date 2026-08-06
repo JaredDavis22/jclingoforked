@@ -1,101 +1,129 @@
-# This work flow runs all Java tests after each commit.
-# Since it also has to build the Clingo shared libraries first, it only runs on the natively supported GitHub runners,
-# to speed up the process.
+# Runs the Java test suite against a freshly built clingo library on every platform that jclingo ships, plus a
+# separate matrix covering the supported Java releases.
 
 name: Continuous Integration
-on: [ "push", "workflow_dispatch", "pull_request" ]
-env:
-  CLINGO_RELEASE: "v5.8.0"
-jobs:
 
-  # don't split these stages to avoid up/downloading any artefacts and immediately start testing after build
-  build-and-test-unix:
-    name: Run ${{ matrix.runner }}
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    name: Resolve clingo version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      ref: ${{ steps.clingo.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - id: clingo
+        uses: ./.github/actions/clingo-version
+
+  build:
+    name: Build
+    needs: version
+    uses: ./.github/workflows/build-natives.yaml
+    with:
+      clingo-ref: ${{ needs.version.outputs.ref }}
+
+  # Every published library is loaded on its own architecture, so a broken cross build cannot slip through.
+  test-platforms:
+    name: Test ${{ matrix.target }}
+    needs: build
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        runner:
-          - ubuntu-latest
-          - macos-latest
+        include:
+          - target: linux-x86-64
+            runner: ubuntu-24.04
+          - target: linux-aarch64
+            runner: ubuntu-24.04-arm
+          - target: darwin-x86-64
+            runner: macos-15-intel
+          - target: darwin-aarch64
+            runner: macos-15
+          - target: win32-x86-64
+            runner: windows-2025
+          - target: win32-aarch64
+            runner: windows-11-arm
     steps:
-      - name: Checkout clingo
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
-          repository: potassco/clingo
-          submodules: recursive
-          path: clingo
-          ref: ${{ env.CLINGO_RELEASE }}
-      - name: Checkout jclingo
-        uses: actions/checkout@v5
-        with:
-          path: jclingo
-      - name: Build clingo
-        shell: bash
-        run: |
-          cd ${{ github.workspace }}/clingo
-          ../jclingo/.github/build.sh
-      - name: Move library
-        run: |
-          cd ${{ github.workspace }}
-          mkdir -p jclingo/src/main/resources
-          mv clingo/build/bin/* jclingo/src/main/resources/
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-      - name: Run tests
-        shell: bash
-        run: cd ${{ github.workspace }}/jclingo && mvn test
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.runner }}-output
-          path: |
-            ${{ github.workspace }}/hs_err_pid*.log
-            ${{ github.workspace }}/src/main/resources/**/*
-          if-no-files-found: warn
+          persist-credentials: false
 
-  build-and-test-windows:
-    name: Run windows-latest
-    runs-on: windows-latest
-    steps:
-      - name: Checkout clingo
-        uses: actions/checkout@v5
+      - name: Download library
+        uses: actions/download-artifact@v8
         with:
-          repository: potassco/clingo
-          submodules: recursive
-          path: clingo
-          ref: ${{ env.CLINGO_RELEASE }}
-      - name: Checkout jclingo
-        uses: actions/checkout@v5
+          name: libclingo-${{ matrix.target }}
+          path: src/main/resources
+
+      - uses: actions/setup-java@v5
         with:
-          path: jclingo
-      - name: Build clingo
-        shell: cmd
-        run: |
-          cd ${{ github.workspace }}\clingo
-          ..\jclingo\.github\build.bat
-      - name: Move library
-        shell: cmd
-        run: |
-          cd ${{ github.workspace }}
-          mkdir jclingo\src\main\resources
-          move clingo\build\bin\Release\clingo.dll jclingo\src\main\resources
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
+          distribution: zulu
           java-version: '11'
+          cache: maven
+
       - name: Run tests
-        shell: cmd
-        run: cd ${{ github.workspace }}\jclingo && mvn test
+        run: mvn --batch-mode --no-transfer-progress test
+
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: windows-output
+          name: crash-logs-${{ matrix.target }}
           path: |
-            ${{ github.workspace }}\hs_err_pid*.log
-            ${{ github.workspace }}/src/main/resources/**/*
-          if-no-files-found: warn
+            hs_err_pid*.log
+            replay_pid*.log
+            target/surefire-reports/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Java 25 aborts the JVM inside the statistics solve event callback, so it is reported without failing the run
+  # until the binding is fixed.
+  test-java:
+    name: Test Java ${{ matrix.java }}
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - java: '17'
+            experimental: false
+          - java: '21'
+            experimental: false
+          - java: '25'
+            experimental: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download library
+        uses: actions/download-artifact@v8
+        with:
+          name: libclingo-linux-x86-64
+          path: src/main/resources
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Run tests
+        run: mvn --batch-mode --no-transfer-progress test

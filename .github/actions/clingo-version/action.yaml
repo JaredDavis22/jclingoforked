@@ -1,0 +1,39 @@
+# Derives the clingo release to build from pom.xml so that the version lives in exactly one place. It also enforces
+# the versioning scheme of the artifact, which is the clingo version followed by a binding revision.
+
+name: Read clingo version
+description: Reads the targeted clingo version from pom.xml and validates the artifact version against it
+
+outputs:
+  version:
+    description: Clingo version, for example 5.8.1
+    value: ${{ steps.read.outputs.version }}
+  ref:
+    description: Matching clingo git tag, for example v5.8.1
+    value: ${{ steps.read.outputs.ref }}
+  project-version:
+    description: jclingo artifact version, for example 5.8.1.0
+    value: ${{ steps.read.outputs.project-version }}
+
+runs:
+  using: composite
+  steps:
+    - id: read
+      shell: bash
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import sys, xml.etree.ElementTree as ET
+        ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+        root = ET.parse('pom.xml').getroot()
+        clingo = root.findtext('m:properties/m:clingo.version', namespaces=ns)
+        project = root.findtext('m:version', namespaces=ns)
+        if not clingo or not project:
+            sys.exit('could not read clingo.version and version from pom.xml')
+        if not project.startswith(clingo + '.'):
+            sys.exit(f'artifact version {project} is not a revision of clingo version {clingo}')
+        print(f'version={clingo}')
+        print(f'ref=v{clingo}')
+        print(f'project-version={project}')
+        PY
+    - shell: bash
+      run: echo "clingo ${{ steps.read.outputs.version }}, artifact ${{ steps.read.outputs.project-version }}" >> "$GITHUB_STEP_SUMMARY"

@@ -1,239 +1,166 @@
+# Builds the clingo library for every shipped platform, tests each one natively and publishes the JAR containing all
+# of them to GitHub Packages and Maven Central.
+
 name: Build clingo and publish JAR
+
 on:
   workflow_dispatch:
     inputs:
-      build_only:
-        description: 'Whether to only build the project and skip releasing it (yes/NO)'
+      build-only:
+        description: Build and test without publishing
         required: false
-        default: 'no'
+        default: false
+        type: boolean
   release:
     types: [ created ]
-env:
-  CLINGO_RELEASE: "v5.8.0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  version:
+    name: Resolve clingo version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      ref: ${{ steps.clingo.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-  build-linux-native:
-    name: Build ${{ matrix.target.name }}
-    runs-on: ${{ matrix.target.runs_on }}
+      - id: clingo
+        uses: ./.github/actions/clingo-version
+
+      # A release published under a tag that does not match pom.xml would ship an artifact nobody can correlate with
+      # the tag, so the run stops before anything is built.
+      - name: Verify release tag
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          EXPECTED: v${{ steps.clingo.outputs.project-version }}
+        run: |
+          if [ "$TAG" != "$EXPECTED" ]; then
+            echo "::error::release tag $TAG does not match the artifact version, expected $EXPECTED"
+            exit 1
+          fi
+
+  build:
+    name: Build
+    needs: version
+    uses: ./.github/workflows/build-natives.yaml
+    with:
+      clingo-ref: ${{ needs.version.outputs.ref }}
+
+  test:
+    name: Test ${{ matrix.target }}
+    needs: build
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - { name: linux-x86-64, runs_on: ubuntu-24.04 }
-          - { name: linux-aarch64, runs_on: ubuntu-24.04-arm }
+        include:
+          - target: linux-x86-64
+            runner: ubuntu-24.04
+          - target: linux-aarch64
+            runner: ubuntu-24.04-arm
+          - target: darwin-x86-64
+            runner: macos-15-intel
+          - target: darwin-aarch64
+            runner: macos-15
+          - target: win32-x86-64
+            runner: windows-2025
+          - target: win32-aarch64
+            runner: windows-11-arm
     steps:
-      - name: Checkout clingo
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
-          repository: potassco/clingo
-          submodules: recursive
-          path: clingo
-          ref: ${{ env.CLINGO_RELEASE }}
-      - name: Checkout jclingo
-        uses: actions/checkout@v5
-        with:
-          path: jclingo
-      - name: Build clingo
-        run: |
-          cd ${{ github.workspace }}/clingo
-          ../jclingo/.github/build.sh
-      - name: Move library
-        run: |
-          cd ${{ github.workspace }}
-          mkdir -p jclingo/src/main/resources/${{ matrix.target.name }}
-          cp -p clingo/build/bin/libclingo.so jclingo/src/main/resources/${{ matrix.target.name }}/libclingo.so
-      - name: Upload clingo
-        uses: actions/upload-artifact@v4
-        with:
-          name: libraries-${{ matrix.target.name }}
-          path: ${{ github.workspace }}/jclingo/src/main/resources/
+          persist-credentials: false
 
+      - name: Download library
+        uses: actions/download-artifact@v8
+        with:
+          name: libclingo-${{ matrix.target }}
+          path: src/main/resources
 
-  build-macos-native:
-    name: Build ${{ matrix.target.name }}
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - { name: darwin-x86-64, cmake: '-DCMAKE_OSX_ARCHITECTURES=x86_64' }
-          - { name: darwin-aarch64, cmake: '-DCMAKE_OSX_ARCHITECTURES=arm64' }
-    steps:
-      - name: Checkout clingo
-        uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
-          repository: potassco/clingo
-          submodules: recursive
-          path: clingo
-          ref: ${{ env.CLINGO_RELEASE }}
-      - name: Checkout jclingo
-        uses: actions/checkout@v5
-        with:
-          path: jclingo
-      - name: Build clingo
-        run: |
-          cd ${{ github.workspace }}/clingo
-          ../jclingo/.github/build.sh ${{ matrix.target.cmake }}
-      - name: Move library
-        run: |
-          cd ${{ github.workspace }}
-          mkdir -p jclingo/src/main/resources/${{ matrix.target.name }}
-          cp -p clingo/build/bin/libclingo.dylib jclingo/src/main/resources/${{ matrix.target.name }}/libclingo.dylib
-      - name: Upload clingo
-        uses: actions/upload-artifact@v4
-        with:
-          name: libraries-${{ matrix.target.name }}
-          path: ${{ github.workspace }}/jclingo/src/main/resources/
-
-
-  build-win-native:
-    name: Build ${{ matrix.target.name }}
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - { name: win32-x86-64, cmake: '-G "Visual Studio 17 2022" -A "x64"' }
-          - { name: win32-aarch64, cmake: '-G "Visual Studio 17 2022" -A "ARM64"' }
-    steps:
-      - name: Checkout clingo
-        uses: actions/checkout@v5
-        with:
-          repository: potassco/clingo
-          submodules: recursive
-          path: clingo
-          ref: ${{ env.CLINGO_RELEASE }}
-      - name: Checkout jclingo
-        uses: actions/checkout@v5
-        with:
-          path: jclingo
-      - name: Build clingo
-        shell: cmd
-        run: |
-          cd ${{ github.workspace }}\clingo
-          ..\jclingo\.github\build.bat ${{ matrix.target.cmake }}
-      - name: Move library
-        shell: cmd
-        run: |
-          cd ${{ github.workspace }}
-          mkdir jclingo\src\main\resources\${{ matrix.target.name }}
-          move clingo\build\bin\Release\clingo.dll jclingo\src\main\resources\${{ matrix.target.name }}
-      - name: Upload clingo
-        uses: actions/upload-artifact@v4
-        with:
-          name: libraries-${{ matrix.target.name }}
-          path: ${{ github.workspace }}\jclingo\src\main\resources\
-
-  test-linux:
-    name: Test ${{ matrix.target.name }}
-    runs-on: ${{ matrix.target.runs_on }}
-    needs: build-linux-native
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - { name: linux-x86-64, runs_on: ubuntu-24.04 }
-          - { name: linux-aarch64, runs_on: ubuntu-24.04-arm }
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          name: libraries-${{ matrix.target.name }}
-          path: ${{ github.workspace }}/src/main/resources/
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
+          distribution: zulu
           java-version: '11'
+          cache: maven
+
       - name: Run tests
-        shell: bash
-        run: mvn test
+        run: mvn --batch-mode --no-transfer-progress test
 
-
-  test-macos:
-    name: Test MacOS
-    needs: build-macos-native
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: libraries-darwin-*
-          merge-multiple: true
-          path: ${{ github.workspace }}/src/main/resources/
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-      - name: Run tests
-        shell: bash
-        run: mvn test
-
-  test-windows:
-    name: Test Windows
-    needs: build-win-native
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          name: libraries-win32-x86-64
-          path: ${{ github.workspace }}\src\main\resources\
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '11'
-      - name: Run tests
-        shell: cmd
-        run: mvn test
-
-  release-github-packages:
-    name: Publish to GitHub packages
-    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.build_only == 'no' }}
-    needs: [ test-linux, test-macos, test-windows ]
-    runs-on: ubuntu-latest
+  publish-github-packages:
+    name: Publish to GitHub Packages
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.build-only }}
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
         with:
-          pattern: libraries*
+          persist-credentials: false
+
+      - name: Download libraries
+        uses: actions/download-artifact@v8
+        with:
+          pattern: libclingo-*
           merge-multiple: true
-          path: ${{ github.workspace }}/src/main/resources/
-      - uses: actions/setup-java@v4
+          path: src/main/resources
+
+      - uses: actions/setup-java@v5
         with:
+          distribution: zulu
           java-version: '11'
-          distribution: 'zulu'
+          cache: maven
+
       - name: Publish package
-        run: mvn --batch-mode -P github deploy
+        run: mvn --batch-mode --no-transfer-progress -P github deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  release-maven-central:
+  publish-maven-central:
     name: Publish to Maven Central
-    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.build_only == 'no' }}
-    needs: [ test-linux, test-macos, test-windows ]
-    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.build-only }}
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
         with:
-          pattern: libraries*
+          persist-credentials: false
+
+      - name: Download libraries
+        uses: actions/download-artifact@v8
+        with:
+          pattern: libclingo-*
           merge-multiple: true
-          path: ${{ github.workspace }}/src/main/resources/
-      - name: Set up Maven Central Repository
-        uses: actions/setup-java@v4
+          path: src/main/resources
+
+      - name: Set up Maven Central repository
+        uses: actions/setup-java@v5
         with:
+          distribution: zulu
           java-version: '11'
-          distribution: 'zulu'
+          cache: maven
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_SIGNING_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
       - name: Publish package
-        run: mvn --batch-mode -P central -Dgpg.keyname=${{ secrets.GPG_PRIMARY_KEYID }} deploy
+        run: mvn --batch-mode --no-transfer-progress -P central -Dgpg.keyname=${{ secrets.GPG_PRIMARY_KEYID }} deploy
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USER }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASS }}

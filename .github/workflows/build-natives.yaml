@@ -1,0 +1,202 @@
+# Builds the clingo shared library for every platform that jclingo ships. Each target is uploaded as its own
+# artifact, laid out in the directory structure JNA expects inside the JAR, so that the test jobs of the calling
+# workflow exercise exactly what gets released.
+#
+# Results are cached on the clingo release plus the build scripts, because the libraries do not depend on any
+# jclingo source. A repeated run therefore restores the libraries instead of compiling them again.
+
+name: Build native libraries
+
+on:
+  workflow_call:
+    inputs:
+      clingo-ref:
+        description: Git ref of the clingo release to build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  linux:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x86-64
+            runner: ubuntu-24.04
+            image: quay.io/pypa/manylinux2014_x86_64
+          - target: linux-aarch64
+            runner: ubuntu-24.04-arm
+            image: quay.io/pypa/manylinux2014_aarch64
+    steps:
+      - name: Checkout jclingo
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Restore cached library
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: natives
+          key: libclingo-${{ matrix.target }}-${{ inputs.clingo-ref }}-${{ hashFiles('.github/build.sh', '.github/workflows/build-natives.yaml') }}
+
+      - name: Checkout clingo
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: potassco/clingo
+          ref: ${{ inputs.clingo-ref }}
+          submodules: recursive
+          path: clingo
+          persist-credentials: false
+
+      # The manylinux image keeps the glibc requirement of the released library at 2.17, which covers every
+      # distribution still in support. Its CentOS 7 base is too old to host the Node runtime that JavaScript
+      # actions need, so the compiler runs through docker instead of the job level container option.
+      - name: Build clingo
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --volume "$PWD:/work" \
+            --workdir /work/clingo \
+            "${{ matrix.image }}" \
+            ../.github/build.sh
+          mkdir -p "natives/${{ matrix.target }}"
+          cp -L clingo/build/bin/libclingo.so "natives/${{ matrix.target }}/libclingo.so"
+
+      - name: Report library requirements
+        run: |
+          file "natives/${{ matrix.target }}/libclingo.so"
+          echo "required glibc $(strings "natives/${{ matrix.target }}/libclingo.so" | grep -oE 'GLIBC_2\.[0-9]+' | sort -uV | tail -1)"
+
+      - name: Upload library
+        uses: actions/upload-artifact@v7
+        with:
+          name: libclingo-${{ matrix.target }}
+          path: natives
+          if-no-files-found: error
+          retention-days: 7
+
+  macos:
+    name: Build ${{ matrix.target }}
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-x86-64
+            architecture: x86_64
+          - target: darwin-aarch64
+            architecture: arm64
+    steps:
+      - name: Checkout jclingo
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Restore cached library
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: natives
+          key: libclingo-${{ matrix.target }}-${{ inputs.clingo-ref }}-${{ hashFiles('.github/build.sh', '.github/workflows/build-natives.yaml') }}
+
+      - name: Checkout clingo
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: potassco/clingo
+          ref: ${{ inputs.clingo-ref }}
+          submodules: recursive
+          path: clingo
+          persist-credentials: false
+
+      # Without an explicit deployment target the library inherits the SDK default of the runner, which locks it to
+      # whatever macOS version the runner image happens to use. 11.0 is the oldest release supporting arm64.
+      - name: Build clingo
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: clingo
+        run: |
+          ../.github/build.sh \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.architecture }} \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          mkdir -p "../natives/${{ matrix.target }}"
+          cp -L build/bin/libclingo.dylib "../natives/${{ matrix.target }}/libclingo.dylib"
+
+      - name: Report library requirements
+        run: |
+          file "natives/${{ matrix.target }}/libclingo.dylib"
+          otool -l "natives/${{ matrix.target }}/libclingo.dylib" | grep -A3 LC_BUILD_VERSION | grep minos
+
+      - name: Upload library
+        uses: actions/upload-artifact@v7
+        with:
+          name: libclingo-${{ matrix.target }}
+          path: natives
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    name: Build ${{ matrix.target }}
+    runs-on: windows-2025
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: win32-x86-64
+            architecture: x64
+          - target: win32-aarch64
+            architecture: ARM64
+    steps:
+      - name: Checkout jclingo
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Restore cached library
+        id: cache
+        uses: actions/cache@v6
+        with:
+          path: natives
+          key: libclingo-${{ matrix.target }}-${{ inputs.clingo-ref }}-${{ hashFiles('.github/build.bat', '.github/workflows/build-natives.yaml') }}
+
+      - name: Checkout clingo
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: potassco/clingo
+          ref: ${{ inputs.clingo-ref }}
+          submodules: recursive
+          path: clingo
+          persist-credentials: false
+
+      - name: Build clingo
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: cmd
+        working-directory: clingo
+        run: |
+          ..\.github\build.bat -A ${{ matrix.architecture }}
+          if errorlevel 1 exit /b %ERRORLEVEL%
+          mkdir ..\natives\${{ matrix.target }}
+          copy build\bin\Release\clingo.dll ..\natives\${{ matrix.target }}\clingo.dll
+
+      - name: Upload library
+        uses: actions/upload-artifact@v7
+        with:
+          name: libclingo-${{ matrix.target }}
+          path: natives
+          if-no-files-found: error
+          retention-days: 7

@@ -6,3 +6,7 @@ target
 *.gz
 .DS_Store
 *.iml
+clingo
+*.so
+*.dylib
+*.dll
